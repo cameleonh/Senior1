@@ -1,44 +1,42 @@
 rm(list=ls())
-setwd("I:/22년공부/0_논문작성/DATA/KLoSA_EXCEL_2022v3")
+setwd("I:/22년공부/0_논문작성/1_고령층의 자산변화가 가족관계와 삶의 만족도에 미치는 영향/0_DATA/KLoSA_EXCEL_2022v3")
 library(tidyverse);library(readxl);library(ggplot2)
 list.files()
 
 
 ## 데이터 불러오기
-dataset1 <- read_excel("Lt08.xlsx") ##%>% as.character()
-dataset2 <- read_excel("str08.xlsx") ##%>% as.character()
-dataset3 <- read_excel("w08.xlsx") ##%>% as.character()
-View(dataset)
-str(dataset1)
-str(dataset2)
-str(dataset3)
-
-## 복사본 만들기
-#df <- subset(dataset, )
-#df1 <- dataset1 %>% select(pid, hhid, )
-df1 <- dataset1 %>% select(pid, hhid, w08_fam1, w08gender1,w08A002_age,
-                           w08enu_type,w08region1,w08region2,w08Ba003,
-                           w08livewith,)
-df2 <- dataset2 %>% select(pid, hhid, w08realestateinc, w08E201, w08residence,
-                           w08G026,w08G027,w08G028,w08G029,w08G030)
-df3 <- dataset3 %>% select(pid, hhid, w08enu_type)
+Lt07 <- read.csv("Lt07.csv", header=T, sep=",")
+Lt08 <- read.csv("Lt08.csv", header=T, sep=",")
+View(Lt07)
+str(Lt07)
+head(Lt07)
 
 
-## 데이터 통합
-raw_df <- full_join(df1, df2, df3, by = "pid")
-is.na(raw_df)
-str(raw_df)
+## 결측치 제거
+table(is.na(Lt07))
+summary(Lt07$w07residence)
+na.omit(Lt07)
+table(is.na(Lt08))
+
+##데이터프레임 만들기
+attach(Lt07)
+df07 <- data.frame(pid, w07residence, w07G029, w07G030, w07G031, w07G032)
+str(df07)
+attach(Lt08)
+df08 <- data.frame(pid, w08residence, w08G029, w08G030, w08G031, w08G032)
+str(df08)
+df <- inner_join(df07, df08, by = "pid")
+str(df)
+table(is.na(df))
+
+## 결측치 제거
+df |> drop_na()
+table(is.na(df))
+head(df)
 
 
-## 복사본 만들기
-df <- raw_df
-
-
-# 변수명 바꾸기
-
-
-# 
-df %>% summarise(count(),
+## 기초통계
+df$w07residence %>% summarise(count(),
                  mean(), 
                  sd(), 
                  var(),
@@ -48,20 +46,10 @@ df %>% summarise(count(),
                  n())
 
 
-
-
-#attributes(df)
-basic <- dataset %>% group_by(pid,w08gender1) %>% count() %>% 
-  ggplot(aes(x=1,y=n, fill=sd))+geom_col(color="white")+
-  coord_polar(theta = "y")+theme_void()+
-  facet_wrap(~w08gender1)
-view(df)
-#?????? ?????? ?????? ?ο?
-df <- rename(df, c(""=""))
-
-#???????��??ӿ? ?ִ? ????ġ Ȯ???ϱ?
-table(is.na(df))
-table(is.na(df$)) #???? $?? ????ġ Ȯ??
-
-
-
+## 통계분석
+attach(df)
+t.test(w07residence, w08residence)
+t.test(w07G029, w08G029)  
+t.test(w07G030, w08G030)  
+t.test(w07G031, w08G031)  
+t.test(w07G032, w08G032)
