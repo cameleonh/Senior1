@@ -1,49 +1,80 @@
 rm(list=ls())
-setwd("I:/22년공부/0_논문작성/1_고령층의 자산변화가 가족관계와 삶의 만족도에 미치는 영향/0_DATA/KLoSA_EXCEL_2022v3")
 library(tidyverse);library(readxl);library(ggplot2)
+setwd("E:/22년/박사과정/1_고령층의 자산변화가 가족관계와 삶의 만족도에 미치는 영향/0_Data/KLoSA_EXCEL_2022v3")
 list.files()
 
 
 ## 데이터 불러오기
 Lt07 <- read.csv("Lt07.csv", header=T, sep=",")
 Lt08 <- read.csv("Lt08.csv", header=T, sep=",")
-View(Lt07)
 str(Lt07)
 head(Lt07)
+View(Lt07)
 
-
-## 결측치 제거
-table(is.na(Lt07))
-summary(Lt07$w07residence)
-na.omit(Lt07)
-table(is.na(Lt08))
 
 ##데이터프레임 만들기
 attach(Lt07)
-df07 <- data.frame(pid, w07residence, w07G029, w07G030, w07G031, w07G032)
+df07 <- data.frame(pid, w07residence, w07G026, w07G027, w07G028, w07G029, w07G030, w07G031, w07G032)
 str(df07)
 attach(Lt08)
-df08 <- data.frame(pid, w08residence, w08G029, w08G030, w08G031, w08G032)
+df08 <- data.frame(pid, w08residence, w08G026, w08G027, w08G028, w08G029, w08G030, w08G031, w08G032)
 str(df08)
+df <- merge(df07, df08, by=("pid"),all=TRUE)
 df <- inner_join(df07, df08, by = "pid")
 str(df)
 table(is.na(df))
+view(df)
 
 ## 결측치 제거
-df |> drop_na()
 table(is.na(df))
+df <- na.omit(df)
 head(df)
+
+
+## 정규성 검정
+attach(df)
+shapiro.test(w07residence)
+shapiro.test(w08residence)
+
+
+## 분산 확인
+attach(df)
+var(df$w07residence~df$w07G026)
+
+
+## T-test
+attach(df)
+t.test(w07G030 ~ w07residence, var.equal=TRUE)
+
+
+## 상관분석
+attach(df)
+cor(w07residence,w07G026, method=c("pearson"))
+cor(w07residence,w07G027, method=c("pearson"))
+cor(w07residence,w07G028, method=c("pearson"))
+cor(w07residence,w07G029, method=c("pearson"))
+cor(w07residence,w07G030, method=c("pearson"))
+cor(w07residence,w07G031, method=c("pearson"))
+cor(w07residence,w07G032, method=c("pearson"))
+
+cor(w08residence,w08G026, method=c("pearson"))
+cor(w08residence,w08G027, method=c("pearson"))
+cor(w08residence,w08G028, method=c("pearson"))
+cor(w08residence,w08G029, method=c("pearson"))
+cor(w08residence,w08G030, method=c("pearson"))
+cor(w08residence,w08G031, method=c("pearson"))
+cor(w08residence,w08G032, method=c("pearson"))
 
 
 ## 기초통계
 df$w07residence %>% summarise(count(),
-                 mean(), 
-                 sd(), 
-                 var(),
-                 median(), 
-                 min(),
-                 max(),
-                 n())
+                              mean(), 
+                              sd(), 
+                              var(),
+                              median(), 
+                              min(),
+                              max(),
+                              n())
 
 
 ## 통계분석
