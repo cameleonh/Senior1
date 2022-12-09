@@ -1,86 +1,210 @@
+### Set working directory and Loading dataset
+
 rm(list=ls())
-library(tidyverse);library(readxl);library(ggplot2)
-setwd("E:/22년/박사과정/1_고령층의 자산변화가 가족관계와 삶의 만족도에 미치는 영향/0_Data/KLoSA_EXCEL_2022v3")
+setwd("I:/22년공부/0_논문작성/1_고령층의 자산변화가 가족관계와 삶의 만족도에 미치는 영향/0_DATA/KLoSA_EXCEL_2022v3")
+getwd()
+graphics.off()
+cat('\014')
 list.files()
 
 
-## 데이터 불러오기
-Lt07 <- read.csv("Lt07.csv", header=T, sep=",")
-Lt08 <- read.csv("Lt08.csv", header=T, sep=",")
-str(Lt07)
-head(Lt07)
-View(Lt07)
+##preparing
+
+#install package!!!
+#devtools::install_github("talbano/epmr")
+
+library(tidyverse);library(knitr);library(lavaan);library(semPlot);library(nord);
+library(psych);library(devtools);library(epmr);library(ggplot2);library(psych);
+library(GGally);library(DescTools);library(corrplot);
+
+data7 <- read.csv("Lt07.csv", header = T)
+data8 <- read.csv("Lt08.csv", header = T)
 
 
-##데이터프레임 만들기
-attach(Lt07)
-df07 <- data.frame(pid, w07residence, w07G026, w07G027, w07G028, w07G029, w07G030, w07G031, w07G032)
-str(df07)
-attach(Lt08)
-df08 <- data.frame(pid, w08residence, w08G026, w08G027, w08G028, w08G029, w08G030, w08G031, w08G032)
-str(df08)
-df <- merge(df07, df08, by=("pid"),all=TRUE)
-df <- inner_join(df07, df08, by = "pid")
-str(df)
-table(is.na(df))
-view(df)
+data7 <- data7 %>% 
+  select(pid,
+         w07edu,
+         w07gender1,
+         w07A002_age,
+         w07A036,
+         w07enu_type,
+         w07C152,
+         w07residence,
+         w07residence_,
+         w07G026,
+         w07G027,
+         w07G028,
+         w07G029,
+         w07G030,
+         w07G031)
 
-## 결측치 제거
-table(is.na(df))
-df <- na.omit(df)
-head(df)
+data8 <- data8 %>% 
+  select(pid,
+         w08edu,
+         w08gender1,
+         w08A002_age,
+         w08A036,
+         w08enu_type,
+         w08C152,
+         w08residence,
+         w08residence_,
+         w08G026,
+         w08G027,
+         w08G028,
+         w08G029,
+         w08G030,
+         w08G031)
 
+names(data7)
+names(data8)
 
-## 정규성 검정
-attach(df)
-shapiro.test(w07residence)
-shapiro.test(w08residence)
+data <- merge(data7, data8, by = "pid")
 
+data$resi = data$w08residence - data$w07residence
+data$relation = data$w08G029 - data$w07G029
 
-## 분산 확인
-attach(df)
-var(df$w07residence~df$w07G026)
+data <- data %>% 
+  mutate(sati = (w08G026 + w08G027 + w08G028 + w08G030)/4)
 
-
-## T-test
-attach(df)
-t.test(w07G030 ~ w07residence, var.equal=TRUE)
-
-
-## 상관분석
-attach(df)
-cor(w07residence,w07G026, method=c("pearson"))
-cor(w07residence,w07G027, method=c("pearson"))
-cor(w07residence,w07G028, method=c("pearson"))
-cor(w07residence,w07G029, method=c("pearson"))
-cor(w07residence,w07G030, method=c("pearson"))
-cor(w07residence,w07G031, method=c("pearson"))
-cor(w07residence,w07G032, method=c("pearson"))
-
-cor(w08residence,w08G026, method=c("pearson"))
-cor(w08residence,w08G027, method=c("pearson"))
-cor(w08residence,w08G028, method=c("pearson"))
-cor(w08residence,w08G029, method=c("pearson"))
-cor(w08residence,w08G030, method=c("pearson"))
-cor(w08residence,w08G031, method=c("pearson"))
-cor(w08residence,w08G032, method=c("pearson"))
+str(data)
 
 
-## 기초통계
-df$w07residence %>% summarise(count(),
-                              mean(), 
-                              sd(), 
-                              var(),
-                              median(), 
-                              min(),
-                              max(),
-                              n())
+
+## selection
+data <- data %>% 
+  select('pid', 'resi', 'sati','w08G026', 'w08G027', 'w08G028', 'w08G030', 'relation', 
+         'w08G029', 'w08gender1', 'w08A002_age', 'w08G031')
+
+data <- rename(data, health = w08G026)
+data <- rename(data, eco = w08G027)
+data <- rename(data, partner = w08G028)
+data <- rename(data, life = w08G030)
+data <- rename(data, relation20 = w08G029)
+data <- rename(data, gender = w08gender1)
+data <- rename(data, age = w08A002_age)
+data <- rename(data, hierarchy = w08G031)
+
+str(data)
 
 
-## 통계분석
-attach(df)
-t.test(w07residence, w08residence)
-t.test(w07G029, w08G029)  
-t.test(w07G030, w08G030)  
-t.test(w07G031, w08G031)  
-t.test(w07G032, w08G032)
+##########################################
+############ 코드 만드는 중 ##############
+##########################################
+
+data = data |> 
+  mutate(
+    gender = as.factor(data$gender)
+)
+
+priceup <- data |>
+  select('pid', 'gender', 'age', 'resi', 'sati') |> 
+  filter(resi > 0)
+
+str(priceup)
+
+
+
+pricedown <- data |>
+  select('pid', 'gender', 'age', 'resi', 'sati') |> 
+  filter(resi <= 0)
+
+
+price <- left_join(priceup, pricedown)
+
+
+
+
+
+
+
+# descriptive statistics
+data$resi = log(data$resi + 1)
+data <- na.omit(data)
+summary(data)
+
+
+
+## type conversion
+str(data)
+data$gender <- as.factor(data$gender)
+str(data)
+
+# correlation
+ggpairs(data, columns = 1:9, ggplot2::aes(colour = gender))+
+  scale_color_nord('aurora')+
+  #scale_color_nord('lumina')+
+  scale_fill_nord('aurora')+
+  theme_minimal()
+
+ggpairs(data, columns=1:7)
+
+
+data %>% 
+  pairs.panels(lm = T, stars = T)
+
+
+
+# model
+model1 <- "#a path
+  relation ~ a1*resi
+  sati ~ a2*resi
+
+  # b path
+  sati ~ b1*relation
+  
+  # indirect and total effects
+  a1b1:= a1*b1
+  total:= a2 + a1b1"
+
+set.seed(1234)
+
+sem <- lavaan::sem(model1, data, se= "bootstrap", bootstrap = 5000)    
+
+summary(sem, standardized = T)  
+
+
+
+# Path diagram:
+semPaths(model1, intAtSide = True)
+semPaths(model1, "std", "hide", intAtSide = True)
+semPaths(model1, 'std', 'est', curveAdjacent = TRUE, style = "lisrel")
+semPaths(model1, what="est", fade=F, posCol="gray30",
+         rotation=2,edge.label.cex = 1.2, label.cex=1
+         ,sizeMan =12, sizeMan2 = 4,style = "lisrel")
+
+
+
+# Standardized estimates:
+semPaths(model1, title = FALSE, curvePivot = TRUE)
+setCor(resi ~ sati, data=mtcars, std=FALSE)
+
+
+##### t-test
+
+by(data$sati, data$gender, length)
+by(data$sati, data$gender, mean)
+by(data$sati, data$gender, sd)
+var.test(data$sati ~ data$gender)
+t.test(data$sati ~ data$gender, val.equal = T)
+
+data$gender <- as.factor(data$gender)
+
+
+
+##### Anova
+data$age <- as.factor(data$age)
+data$age
+aov_sati = aov(sati ~ age, data)
+summary(aov_sati)
+PostHocTest(aov_sati, method = 'scheffe')
+
+
+
+
+
+
+
+## 수정 중인 코드
+##data$age = cut(data$age, c(2:9)*10, right=F, 
+labels = paste0(c(2:8)*10, "대")) 
+
