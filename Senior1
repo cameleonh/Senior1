@@ -236,7 +236,7 @@ df$age_range= ifelse(df$age >= 80, "4",
 #df$age_range = as.factor(df$age_range)
 
 df <- df %>% 
-  select(resi, sati, age_range)
+  select(gender, age, resi, sati, age_range, relation20)
 
 names(df)
 str(df)
@@ -469,23 +469,25 @@ ggplot(residown, aes(x=gender, y=n, fill = sati_change)) +
 ######################자녀와의 관계 변화########################
 ################################################################
 
-df$relation_range= ifelse(df$relation20 == 100, "향상",
-                     ifelse(df$relation20 >= 90, "향상",
-                            ifelse(df$relation20 >= 80, "향상",
-                                   ifelse(df$relation20 >= 70, "향상",
-                                          ifelse(df$relation20 >= 60, "향상",
-                                                 ifelse(df$relation20 >= 50, "변화없음",
-                                                        ifelse(df$relation20 >= 40, "나빠짐",
-                                                               ifelse(df$relation20 >= 30, "나빠짐",
-                                                                      ifelse(df$relation20 >= 20, "나빠짐",
-                                                                             ifelse(df$relation20 >= 10, "나빠짐", "감소"))))))))))
-
-
-
+df$relation_range = ifelse(df$relation20 == 100, "향상",
+                            ifelse(df$relation20 >= 90, "향상",
+                                   ifelse(df$relation20 >= 80, "향상",
+                                          ifelse(df$relation20 >= 70, "향상",
+                                                 ifelse(df$relation20 >= 60, "변화없음",
+                                                        ifelse(df$relation20 >= 50, "변화없음",
+                                                               ifelse(df$relation20 >= 40, "변화없음",
+                                                                      ifelse(df$relation20 >= 30, "나빠짐",
+                                                                             ifelse(df$relation20 >= 20, "나빠짐",
+                                                                                    ifelse(df$relation20 >= 10, "나빠짐", "나빠짐"))))))))))
 df5 <- df %>% 
   count(gender, age, resi_change, sati_change, age_range, relation_range, sort = T) %>% 
   group_by(gender, age_range) %>% 
   na.omit()
+head(df)
+
+                            
+                            
+                            
 df5$gender <- as.factor(df5$gender)
 df5$relation_range <- as.factor(df5$relation_range)
 satigood <- subset(df5, sati_change == "향상")
@@ -501,7 +503,7 @@ str(df5)
 
 ggplot(resiup, aes(x=age_range, y=n, fill = relation_range)) + 
   geom_bar(stat="identity", position="fill") +
-  scale_fill_brewer(palette = "Oranges") + 
+  scale_fill_brewer(palette = "Set3") + 
   labs(x= "주택가격상승", y=NULL, fill="자녀와의 관계") +
   theme_minimal() + 
   scale_x_discrete(labels = c("1" = "60대 미만", "2" = "60대", "3" = "70대", "4" = "80대 이상")) +
@@ -515,7 +517,7 @@ ggplot(resiup, aes(x=age_range, y=n, fill = relation_range)) +
 
 ggplot(resisame, aes(x=age_range, y=n, fill = relation_range)) + 
   geom_bar(stat="identity", position="fill") +
-  scale_fill_brewer(palette = "Oranges") + 
+  scale_fill_brewer(palette = "Set3") + 
   labs(x= "주택가격상승", y=NULL, fill="자녀와의 관계") +
   theme_minimal() + 
   scale_x_discrete(labels = c("1" = "60대 미만", "2" = "60대", "3" = "70대", "4" = "80대 이상")) +
@@ -528,7 +530,7 @@ ggplot(resisame, aes(x=age_range, y=n, fill = relation_range)) +
 
 ggplot(residown, aes(x=age_range, y=n, fill = relation_range)) + 
   geom_bar(stat="identity", position="fill") +
-  scale_fill_brewer(palette = "Oranges") + 
+  scale_fill_brewer(palette = "Set3") + 
   labs(x= "주택가격상승", y=NULL, fill="자녀와의 관계") +
   theme_minimal() + 
   scale_x_discrete(labels = c("1" = "60대 미만", "2" = "60대", "3" = "70대", "4" = "80대 이상")) +
