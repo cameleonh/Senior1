@@ -17,9 +17,10 @@ library(plyr);library(tidyverse);library(knitr);library(lavaan);library(summaryt
 library(psych);library(devtools);library(epmr);library(ggplot2);library(GGally);
 library(DescTools);library(corrplot);library(semPlot);library(nord);
 
-data7 <- read.csv("Lt07.csv", header = T)
-data8 <- read.csv("Lt08.csv", header = T)
-
+raw_data7 <- read.csv("Lt07.csv", header = T)
+raw_data8 <- read.csv("Lt08.csv", header = T)
+data7 <- raw_data7
+data8 <- raw_data8
 
 data7 <- data7 %>% 
   select(pid,
@@ -193,8 +194,6 @@ by(data$sati, data$gender, sd)
 var.test(data$sati ~ data$gender)
 t.test(data$sati ~ data$gender, val.equal = T)
 
-data$gender <- as.factor(data$gender)
-
 
 
 ##### Anova
@@ -233,9 +232,9 @@ str(backup_data)
 df <- backup_data 
 
 hist(df$age)
-df$age_range= ifelse(df$age >= 80, "80",
-                     ifelse(df$age >= 70, "70",
-                            ifelse(df$age >= 60, "60", "50")))
+df$age_range= ifelse(df$age >= 80, "4",
+                     ifelse(df$age >= 70, "3",
+                            ifelse(df$age >= 60, "2", "1")))
 #df$age_range = as.factor(df$age_range)
 
 df <- df %>% 
@@ -279,7 +278,13 @@ ggplot(satigood, aes(x=age_range, y=percent_n, fill = resi_change)) + geom_col(s
   scale_fill_brewer(palette = "Oranges") + labs(x= "만족도변화", y=NULL, fill="주택가격변화") +
   theme_minimal() 
 
+
+
 #또는 다음과 같은 방법으로도 할 수 있습니다.
+satigood <- subset(df2, sati_change == "향상")
+satisame <- subset(df2, sati_change == "변화없음")
+satibad <- subset(df2, sati_change == "감소")
+
 ggplot(satigood, aes(x=age_range, y=n, fill = resi_change)) + 
   geom_bar(stat="identity", position="fill")+
   scale_fill_brewer(palette = "Oranges") + 
@@ -310,32 +315,33 @@ residown <- subset(df2, resi_change == "하락")
 
 ggplot(resiup, aes(x=age_range, y=n, fill = sati_change)) + 
   geom_bar(stat="identity", position="fill")+
-  scale_fill_brewer(palette = "Oranges") + 
-  labs(x= "주택가격상승", y=NULL, fill="만족도향상") +
+  scale_fill_brewer(palette = "RdPu") + 
+  labs(x= "주택가격상승", y=NULL, fill="만족도변화") +
   theme_minimal() + 
-  scale_x_discrete(labels = c("1" = "60대 미만", "2" = "60-70대", "3" = "70-80대", "4" = "80대 이상"))
+  scale_x_discrete(labels = c("1" = "60대 미만", "2" = "60대", "3" = "70대", "4" = "80대 이상"))
 
 ggplot(resisame, aes(x=age_range, y=n, fill = sati_change)) + 
   geom_bar(stat="identity", position="fill")+
-  scale_fill_brewer(palette = "Oranges") + 
-  labs(x= "주택가격변화없음", y=NULL, fill="만족도변화없음") +
+  scale_fill_brewer(palette = "RdPu") + 
+  labs(x= "주택가격변화없음", y=NULL, fill="만족도변화") +
   theme_minimal() + 
-  scale_x_discrete(labels = c("1" = "60대 미만", "2" = "60-70대", "3" = "70-80대", "4" = "80대 이상"))
+  scale_x_discrete(labels = c("1" = "60대 미만", "2" = "60대", "3" = "70대", "4" = "80대 이상"))
 
 ggplot(residown, aes(x=age_range, y=n, fill = sati_change)) + 
   geom_bar(stat="identity", position="fill")+
-  scale_fill_brewer(palette = "Oranges") + 
-  labs(x= "주택가격하락", y=NULL, fill="만족도감소") +
+  scale_fill_brewer(palette = "RdPu") + 
+  labs(x= "주택가격하락", y=NULL, fill="만족도변화") +
   theme_minimal() + 
-  scale_x_discrete(labels = c("1" = "60대 미만", "2" = "60-70대", "3" = "70-80대", "4" = "80대 이상"))
+  scale_x_discrete(labels = c("1" = "60대 미만", "2" = "60대", "3" = "70대", "4" = "80대 이상"))
 
-?t.test
 
 ##### t-test
 
-by(df2$resi_change, df2$sati_change)
+t.test(df2$resi_change~df2$sati_change, val.equal = T)
+var.test(df2$resi_change~df2$sati_change, val.equal = T)
 by(data$gender, data$, mean)
 by(data$sati, data$gender, sd)
 var.test(data$sati ~ data$gender)
 t.test(data$sati ~ data$gender, val.equal = T)
 
+describe(df2)
