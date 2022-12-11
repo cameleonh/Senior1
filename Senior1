@@ -1,7 +1,7 @@
 ### Set working directory and Loading dataset
 
 rm(list=ls())
-setwd("I:/22년공부/0_논문작성/1_고령층의 자산변화가 가족관계와 삶의 만족도에 미치는 영향/0_DATA/KLoSA_EXCEL_2022v3")
+setwd("E:/000_22년/1_박사과정/1_고령층의 자산변화가 가족관계와 삶의 만족도에 미치는 영향/0_DATA/KLoSA_EXCEL_2022v3")
 getwd()
 graphics.off()
 cat('\014')
@@ -13,9 +13,9 @@ list.files()
 #install package!!!
 #devtools::install_github("talbano/epmr")
 
-library(tidyverse);library(knitr);library(lavaan);library(semPlot);library(nord);
-library(psych);library(devtools);library(epmr);library(ggplot2);library(psych);
-library(GGally);library(DescTools);library(corrplot);
+library(plyr);library(tidyverse);library(knitr);library(lavaan);library(summarytools);
+library(psych);library(devtools);library(epmr);library(ggplot2);library(GGally);
+library(DescTools);library(corrplot);library(semPlot);library(nord);
 
 data7 <- read.csv("Lt07.csv", header = T)
 data8 <- read.csv("Lt08.csv", header = T)
@@ -64,7 +64,12 @@ data$resi = data$w08residence - data$w07residence
 data$relation = data$w08G029 - data$w07G029
 
 data <- data %>% 
-  mutate(sati = (w08G026 + w08G027 + w08G028 + w08G030)/4)
+  mutate(sati8 = (w08G026 + w08G027 + w08G028 + w08G030)/4)
+
+data <- data %>% 
+  mutate(sati7 = (w07G026 + w07G027 + w07G028 + w07G030)/4)
+
+data$sati = data$sati8 - data$sati7
 
 str(data)
 
@@ -72,20 +77,21 @@ str(data)
 
 ## selection
 data <- data %>% 
-  select('pid', 'resi', 'sati','w08G026', 'w08G027', 'w08G028', 'w08G030', 'relation', 
-         'w08G029', 'w08gender1', 'w08A002_age', 'w08G031')
+  select('pid', 'w08gender1', 'w08A002_age', 'resi', 'sati','w08G026', 'w08G027', 
+         'w08G028', 'w08G029', 'w08G030', 'relation')
 
+data <- rename(data, gender = w08gender1)
+data <- rename(data, age = w08A002_age)
 data <- rename(data, health = w08G026)
 data <- rename(data, eco = w08G027)
 data <- rename(data, partner = w08G028)
 data <- rename(data, life = w08G030)
 data <- rename(data, relation20 = w08G029)
-data <- rename(data, gender = w08gender1)
-data <- rename(data, age = w08A002_age)
-data <- rename(data, hierarchy = w08G031)
+# data <- rename(data, hierarchy = w08G031)
 
 str(data)
 
+backup_data <- data #백업용
 
 ##########################################
 ############ 코드 만드는 중 ##############
@@ -94,7 +100,7 @@ str(data)
 data = data |> 
   mutate(
     gender = as.factor(data$gender)
-)
+  )
 
 priceup <- data |>
   select('pid', 'gender', 'age', 'resi', 'sati') |> 
@@ -207,4 +213,129 @@ PostHocTest(aov_sati, method = 'scheffe')
 ## 수정 중인 코드
 ##data$age = cut(data$age, c(2:9)*10, right=F, 
 labels = paste0(c(2:8)*10, "대")) 
+
+
+
+
+
+
+
+
+
+
+#######################################
+#####추가함(1210) / 수정함(12.11)######
+#######################################
+
+
+str(backup_data)
+
+df <- backup_data 
+
+hist(df$age)
+df$age_range= ifelse(df$age >= 80, "80",
+                     ifelse(df$age >= 70, "70",
+                            ifelse(df$age >= 60, "60", "50")))
+#df$age_range = as.factor(df$age_range)
+
+df <- df %>% 
+  select(resi, sati, age_range)
+
+names(df)
+str(df)
+df
+
+df$resi_change = ifelse(df$resi > 0, "상승",
+                        ifelse(df$resi<0, "하락", "유지"))
+df$sati_change= ifelse(df$sati > 0, "향상",
+                       ifelse(df$sati<0, "감소", "변화없음"))
+
+df2 <- df %>%  
+  count(resi_change, sati_change, age_range, sort = T) %>% 
+  na.omit()
+df2
+
+ggplot(df2, aes(x=resi_change, y=n, fill = sati_change)) + geom_col(position = "dodge")+
+  scale_fill_brewer(palette = "Oranges") + labs(x= "주택가격변화", y=NULL, fill="만족도 변화") +
+  theme_minimal()
+
+ggplot(df2, aes(x=resi_change, y=n, fill = sati_change)) + geom_col(show.legend = F) +
+  facet_wrap(~sati_change)
+
+#######추가(12.11)
+names(df2)
+
+satigood <- subset(df2, sati_change == "향상")
+satisame <- subset(df2, sati_change == "변화없음")
+satibad <- subset(df2, sati_change == "감소")
+
+satigood
+
+satigood <- ddply(satigood, "age_range", transform, percent_n = n/sum(n)*100)
+
+
+# 분포도 히스토그램
+ggplot(satigood, aes(x=age_range, y=percent_n, fill = resi_change)) + geom_col(show.legend = F)+
+  scale_fill_brewer(palette = "Oranges") + labs(x= "만족도변화", y=NULL, fill="주택가격변화") +
+  theme_minimal() 
+
+#또는 다음과 같은 방법으로도 할 수 있습니다.
+ggplot(satigood, aes(x=age_range, y=n, fill = resi_change)) + 
+  geom_bar(stat="identity", position="fill")+
+  scale_fill_brewer(palette = "Oranges") + 
+  labs(x= "만족도향상", y=NULL, fill="주택가격변화") +
+  theme_minimal() + 
+  scale_x_discrete(labels = c("1" = "60대 미만", "2" = "60-70대", "3" = "70-80대", "4" = "80대 이상"))
+
+ggplot(satisame, aes(x=age_range, y=n, fill = resi_change)) + 
+  geom_bar(stat="identity", position="fill")+
+  scale_fill_brewer(palette = "Oranges") + 
+  labs(x= "만족도변화없음", y=NULL, fill="주택가격변화") +
+  theme_minimal() + 
+  scale_x_discrete(labels = c("1" = "60대 미만", "2" = "60-70대", "3" = "70-80대", "4" = "80대 이상"))
+
+ggplot(satibad, aes(x=age_range, y=n, fill = resi_change)) + 
+  geom_bar(stat="identity", position="fill")+
+  scale_fill_brewer(palette = "Oranges") + 
+  labs(x= "만족도감소", y=NULL, fill="주택가격변화") +
+  theme_minimal() + 
+  scale_x_discrete(labels = c("1" = "60대 미만", "2" = "60-70대", "3" = "70-80대", "4" = "80대 이상"))
+
+
+
+## 주택가격이 변한 집단/만족도 변화
+resiup <- subset(df2, resi_change == "상승")
+resisame <- subset(df2, resi_change == "유지")
+residown <- subset(df2, resi_change == "하락")
+
+ggplot(resiup, aes(x=age_range, y=n, fill = sati_change)) + 
+  geom_bar(stat="identity", position="fill")+
+  scale_fill_brewer(palette = "Oranges") + 
+  labs(x= "주택가격상승", y=NULL, fill="만족도향상") +
+  theme_minimal() + 
+  scale_x_discrete(labels = c("1" = "60대 미만", "2" = "60-70대", "3" = "70-80대", "4" = "80대 이상"))
+
+ggplot(resisame, aes(x=age_range, y=n, fill = sati_change)) + 
+  geom_bar(stat="identity", position="fill")+
+  scale_fill_brewer(palette = "Oranges") + 
+  labs(x= "주택가격변화없음", y=NULL, fill="만족도변화없음") +
+  theme_minimal() + 
+  scale_x_discrete(labels = c("1" = "60대 미만", "2" = "60-70대", "3" = "70-80대", "4" = "80대 이상"))
+
+ggplot(residown, aes(x=age_range, y=n, fill = sati_change)) + 
+  geom_bar(stat="identity", position="fill")+
+  scale_fill_brewer(palette = "Oranges") + 
+  labs(x= "주택가격하락", y=NULL, fill="만족도감소") +
+  theme_minimal() + 
+  scale_x_discrete(labels = c("1" = "60대 미만", "2" = "60-70대", "3" = "70-80대", "4" = "80대 이상"))
+
+?t.test
+
+##### t-test
+
+by(df2$resi_change, df2$sati_change)
+by(data$gender, data$, mean)
+by(data$sati, data$gender, sd)
+var.test(data$sati ~ data$gender)
+t.test(data$sati ~ data$gender, val.equal = T)
 
