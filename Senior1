@@ -1,7 +1,7 @@
 ### Set working directory and Loading dataset
 
 rm(list=ls())
-setwd("E:/000_22년/1_박사과정/1_고령층의 자산변화가 가족관계와 삶의 만족도에 미치는 영향/0_DATA/KLoSA_EXCEL_2022v3")
+setwd("I:/22년공부/0_논문작성/1_고령층의 자산변화가 가족관계와 삶의 만족도에 미치는 영향/0_DATA/KLoSA_EXCEL_2022v3")
 getwd()
 graphics.off()
 cat('\014')
@@ -37,7 +37,8 @@ data7 <- data7 %>%
          w07G028,
          w07G029,
          w07G030,
-         w07G031)
+         w07G031,
+         w07hhnetassets)
 
 data8 <- data8 %>% 
   select(pid,
@@ -54,15 +55,24 @@ data8 <- data8 %>%
          w08G028,
          w08G029,
          w08G030,
-         w08G031)
+         w08G031,
+         w08hhnetassets)
 
 names(data7)
 names(data8)
 
 data <- merge(data7, data8, by = "pid")
 
+
+
+describe(data$w08hhnetassets)
+head(data$resi)
+head(data$assets)
+
 data$resi = data$w08residence - data$w07residence
 data$relation = data$w08G029 - data$w07G029
+#가구순자산 - 주택가격
+data$assets = data$w08hhnetassets - data$w08residence
 
 data <- data %>% 
   mutate(sati8 = (w08G026 + w08G027 + w08G028 + w08G030)/4)
@@ -93,35 +103,6 @@ data <- rename(data, relation20 = w08G029)
 str(data)
 
 backup_data <- data #백업용
-
-##########################################
-############ 코드 만드는 중 ##############
-##########################################
-
-data = data |> 
-  mutate(
-    gender = as.factor(data$gender)
-  )
-
-priceup <- data |>
-  select('pid', 'gender', 'age', 'resi', 'sati') |> 
-  filter(resi > 0)
-
-str(priceup)
-
-
-
-pricedown <- data |>
-  select('pid', 'gender', 'age', 'resi', 'sati') |> 
-  filter(resi <= 0)
-
-
-price <- left_join(priceup, pricedown)
-
-
-
-
-
 
 
 # descriptive statistics
@@ -575,3 +556,46 @@ var.test(data$sati ~ data$gender)
 t.test(data$sati ~ data$gender, val.equal = T)
 
 describe(df2)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+##########################################
+############ 코드 만드는 중 ##############
+##########################################
+
+data = data |> 
+  mutate(
+    gender = as.factor(data$gender)
+  )
+
+priceup <- data |>
+  select('pid', 'gender', 'age', 'resi', 'sati') |> 
+  filter(resi > 0)
+
+str(priceup)
+
+
+
+pricedown <- data |>
+  select('pid', 'gender', 'age', 'resi', 'sati') |> 
+  filter(resi <= 0)
+
+
+price <- left_join(priceup, pricedown)
+
