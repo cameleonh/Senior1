@@ -17,8 +17,14 @@ library(plyr);library(tidyverse);library(knitr);library(lavaan);library(summaryt
 library(psych);library(devtools);library(epmr);library(ggplot2);library(GGally);
 library(DescTools);library(corrplot);library(semPlot);library(nord);
 
-raw_data7 <- read.csv("Lt07.csv", header = T)
-raw_data8 <- read.csv("Lt08.csv", header = T)
+raw_data1 <- read.csv("Lt01.csv", header = T, fileEncoding = "euc-kr")
+raw_data2 <- read.csv("Lt02.csv", header = T, fileEncoding = "euc-kr")
+raw_data3 <- read.csv("Lt03.csv", header = T, fileEncoding = "euc-kr")
+raw_data4 <- read.csv("Lt04.csv", header = T, fileEncoding = "euc-kr")
+raw_data5 <- read.csv("Lt05.csv", header = T, fileEncoding = "euc-kr")
+raw_data6 <- read.csv("Lt06.csv", header = T, fileEncoding = "euc-kr")
+raw_data7 <- read.csv("Lt07.csv", header = T, fileEncoding = "euc-kr")
+raw_data8 <- read.csv("Lt08.csv", header = T, fileEncoding = "euc-kr")
 data7 <- raw_data7
 data8 <- raw_data8
 
@@ -38,7 +44,10 @@ data7 <- data7 %>%
          w07G029,
          w07G030,
          w07G031,
-         w07hhnetassets)
+         w07hhnetassets,
+         w07region1,
+         w07region2,
+         w07region3)
 
 data8 <- data8 %>% 
   select(pid,
@@ -56,69 +65,78 @@ data8 <- data8 %>%
          w08G029,
          w08G030,
          w08G031,
-         w08hhnetassets)
+         w08hhnetassets,
+         w08region1,
+         w08region2,
+         w08region3,
+         w08marital,
+         w08present_ecotype,
+         w08present_labor)
 
 names(data7)
 names(data8)
 
-data <- merge(data7, data8, by = "pid")
+df <- merge(data7, data8, by = "pid")
 
 
+describe(df)
+describe(df$w08hhnetassets)
 
-describe(data$w08hhnetassets)
-head(data$resi)
-head(data$assets)
 
-data$resi = data$w08residence - data$w07residence
-data$relation = data$w08G029 - data$w07G029
-#가구순자산 - 주택가격
-data$assets = data$w08hhnetassets - data$w08residence
+df$resi = data$w08residence - data$w07residence
+df$relation = data$w08G029 - data$w07G029
+#가구순자산 - 주택가격 = 순여유자산 총액
+df$assets = data$w08hhnetassets - data$w08residence
 
-data <- data %>% 
+head(df$resi)
+head(df$assets)
+
+
+df <- df %>% 
   mutate(sati8 = (w08G026 + w08G027 + w08G028 + w08G030)/4)
 
-data <- data %>% 
+df <- df %>% 
   mutate(sati7 = (w07G026 + w07G027 + w07G028 + w07G030)/4)
 
-data$sati = data$sati8 - data$sati7
+df$sati = df$sati8 - df$sati7
 
-str(data)
+str(df)
 
 
 
 ## selection
-data <- data %>% 
+df <- df %>% 
   select('pid', 'w08gender1', 'w08A002_age', 'resi', 'sati','w08G026', 'w08G027', 
          'w08G028', 'w08G029', 'w08G030', 'relation')
 
-data <- rename(data, gender = w08gender1)
-data <- rename(data, age = w08A002_age)
-data <- rename(data, health = w08G026)
-data <- rename(data, eco = w08G027)
-data <- rename(data, partner = w08G028)
-data <- rename(data, life = w08G030)
-data <- rename(data, relation20 = w08G029)
-# data <- rename(data, hierarchy = w08G031)
+df <- rename(df, gender = w08gender1)
+df <- rename(df, age = w08A002_age)
+df <- rename(df, health = w08G026)
+df <- rename(df, eco = w08G027)
+df <- rename(df, partner = w08G028)
+df <- rename(df, relation20 = w08G029)
+df <- rename(df, life = w08G030)
+# df <- rename(df, hierarchy = w08G031)
 
-str(data)
+str(df)
 
-backup_data <- data #백업용
+backup_data <- df #백업용
 
 
 # descriptive statistics
-data$resi = log(data$resi + 1)
-data <- na.omit(data)
-summary(data)
-
+df$resi = log(df$resi + 1)
+df <- na.omit(df)
+summary(df)
+describe(df)
 
 
 ## type conversion
-str(data)
-data$gender <- as.factor(data$gender)
-str(data)
+str(df)
+df$gender <- as.factor(df$gender)
+str(df)
 
 # correlation
-ggpairs(data, columns = 1:9, ggplot2::aes(colour = gender))+
+ggpairs(df, columns = 1:9, ggplot2::aes(colour = gender))+
   scale_color_nord('aurora')+
   #scale_color_nord('lumina')+
   scale_fill_nord('aurora')+
@@ -169,18 +187,18 @@ setCor(resi ~ sati, data=mtcars, std=FALSE)
 
 ##### t-test
 
-by(data$sati, data$gender, length)
-by(data$sati, data$gender, mean)
-by(data$sati, data$gender, sd)
-var.test(data$sati ~ data$gender)
-t.test(data$sati ~ data$gender, val.equal = T)
+by(df$sati, df$gender, length)
+by(df$sati, df$gender, mean)
+by(df$sati, df$gender, sd)
+var.test(df$sati ~ df$gender)
+t.test(df$sati ~ df$gender, val.equal = T)
 
 
 
 ##### Anova
-data$age <- as.factor(data$age)
-data$age
-aov_sati = aov(sati ~ age, data)
+df$age <- as.factor(df$age)
+df$age
+aov_sati = aov(sati ~ age, df)
 summary(aov_sati)
 PostHocTest(aov_sati, method = 'scheffe')
 
@@ -189,12 +207,96 @@ PostHocTest(aov_sati, method = 'scheffe')
 
 
 
-
-## 수정 중인 코드
+#############################################
+###############기술통계분석##################
+#############################################
 ##data$age = cut(data$age, c(2:9)*10, right=F, 
 labels = paste0(c(2:8)*10, "대")) 
 
+rm(list=ls())
 
+stat_disruptive <- data %>% 
+  select('pid', 'w07gender1', 'w08A002_age', 'w07region1', 'w07region2', 'w07region3',
+         'w08edu', 'w08marital', 'w08C152', 'w08present_ecotype', 'resi', 'sati',
+         'w08G026', 'w08G027', 'w08G028', 'w08G029', 'w08G030', 'relation', 'w08present_labor')
+stat_disruptive <- filter(stat_disruptive, !is.na(resi))
+
+names(data)
+stat_disruptive <- rename(stat_disruptive, gender = w08gender1)
+stat_disruptive <- rename(stat_disruptive, age = w08A002_age)
+stat_disruptive <- rename(stat_disruptive, health = w08G026)
+stat_disruptive <- rename(stat_disruptive, eco = w08G027)
+stat_disruptive <- rename(stat_disruptive, partner = w08G028)
+stat_disruptive <- rename(stat_disruptive, relation20 = w08G029)
+stat_disruptive <- rename(stat_disruptive, life = w08G030)
+
+stat_disruptive <- na.omit(stat_disruptive)
+str(stat_disruptive)
+
+
+summary(stat_disruptive)
+describe(stat_disruptive)
+
+## 성별별
+table(stat_disruptive$w07gender1)
+prop_gender <- c(round(prop.table(table(stat_disruptive$w07gender1))*100, 1))
+prop_gender
+
+attach(stat_disruptive)
+stat_disruptive$age_range = ifelse(stat_disruptive$age >= 80, "4",
+                     ifelse(stat_disruptive$age >= 70, "3",
+                            ifelse(stat_disruptive$age >= 60, "2", "1")))
+table(stat_disruptive$age_range)
+prop_age_range <- c(round(prop.table(table(stat_disruptive$age_range))*100, 1))
+prop_age_range
+
+## 거주지역
+table(stat_disruptive$w07region1)
+prop_region1 <- c(round(prop.table(table(stat_disruptive$w07region1))*100, 1))
+prop_region1
+
+table(stat_disruptive$w07region2)
+prop_region2 <- c(round(prop.table(table(stat_disruptive$w07region2))*100, 1))
+prop_region2
+
+table(stat_disruptive$w07region3)
+prop_region3 <- c(round(prop.table(table(stat_disruptive$w07region3))*100, 1))
+prop_region3
+
+
+## 교육수준
+table(stat_disruptive$w08edu)
+prop_edu <- c(round(prop.table(table(stat_disruptive$w08edu))*100, 1))
+prop_edu
+
+## 결혼상태
+table(stat_disruptive$w08marital)
+prop_edu <- c(round(prop.table(table(stat_disruptive$w08marital))*100, 1))
+prop_edu
+
+## 건강상태
+table(stat_disruptive$w08C152)
+prop_edu <- c(round(prop.table(table(stat_disruptive$w08C152))*100, 1))
+prop_edu
+
+
+## 노동여부
+freq_labor <- table(stat_disruptive$w08present_labor)
+prop_edu <- c(round(prop.table(table(stat_disruptive$w08present_labor))*100, 1))
+prop_edu
+prop_table_labor <- data.frame(freq=freq_labor, prop = prop_edu);prop_table_labor
+
+
+df_disruptive <- inner_join(data7, data8, by = "pid")
+str(df_disruptive)
+df_disruptive$resi <- df_disruptive$w08residence - df_disruptive$w07residence
+df_disruptive <- df_disruptive %>%  na.omit
+summary(df_disruptive)
+names(df_disruptive)
+
+attach(df_disruptive)
+df_disruptive1 <- df_disruptive %>% 
+  select(pid, w08A002_age, w08)
 
 
 
@@ -299,6 +401,26 @@ resisame <- subset(df3, resi_change == "유지")
 residown <- subset(df3, resi_change == "하락")
 
 
+## TEST
+df3 %>% group_by(resi_change, sati_change) %>% summarise(count=n()) %>% mutate(prop=round(count/sum(count), 3)) %>% 
+  ggplot(aes(x=resiup, y = n, fill = sati_change)) + 
+  geom_bar(stat="identity", position="fill") +
+  geom_text(aes(label = paste(prop*100, "%")), size = 5, position = position_stack(.5)) + scale_fill_brewer(palette = "Oranges") + xlab("zip_code")
+
+
+
+
+ggplot(residown, aes(x=age_range, y=n, fill = sati_change)) +
+  geom_col(aes(fill=sati_change), position="stack") +
+  geom_text(mapping = aes(label = sati_change), size = 5, vjust=0.3)
+
+df$sati_change
+geom_text(mapping = aes(label = sati_change$percentile_n), vjust = -1, size = 5) +
+  
+
+
+
+
 
 ### histogram
 ggplot(satigood, aes(x=age_range, y=n, fill = resi_change)) + 
@@ -313,7 +435,7 @@ ggplot(satigood, aes(x=age_range, y=n, fill = resi_change)) +
   scale_fill_brewer(palette = "Oranges") + 
   labs(x= "만족도향상", y=NULL, fill="주택가격변화") +
   theme_minimal() + 
-  scale_x_discrete(labels = c("1" = "60대 미만", "2" = "70대", "3" = "80대", "4" = "80대 이상")) +
+  scale_x_discrete(labels = c("1" = "40~50대", "2" = "60대", "3" = "70대", "4" = "80대 이상")) +
   ggtitle("Number of Age by Satisfaction") +
   xlab("Days of Week") + ylab("Total number") + 
   theme(
@@ -321,13 +443,13 @@ ggplot(satigood, aes(x=age_range, y=n, fill = resi_change)) +
     axis.title.x = element_text(color="black", size=11, face="bold"),
     axis.title.y = element_text(color="black", size=11, face="bold" )) 
 
-## 삶의 만족도 변화 집단별 주태가격 변화화
+## 삶의 만족도 변화 집단별 주택가격 변화
 ggplot(satigood, aes(x=age_range, y=n, fill = resi_change)) + 
   geom_bar(stat="identity", position="fill")+
   scale_fill_brewer(palette = "Oranges") + 
   labs(x= "삶의 만족도 상승", y=NULL, fill="주택가격변화") +
   theme_minimal() + 
-  scale_x_discrete(labels = c("1" = "60대 미만", "2" = "60대", "3" = "70대", "4" = "80대 이상")) +
+  scale_x_discrete(labels = c("1" = "40~50대", "2" = "60대", "3" = "70대", "4" = "80대 이상")) +
   ggtitle("Comparison of Housing Price Changes by Age") +
   xlab("삶의 만족도 상승집단") + ylab("Total number") + 
   theme(
@@ -335,25 +457,27 @@ ggplot(satigood, aes(x=age_range, y=n, fill = resi_change)) +
     axis.title.x = element_text(color="black", size=11, face="bold"),
     axis.title.y = element_text(color="black", size=11, face="bold" ))
 
+
 ggplot(satisame, aes(x=age_range, y=n, fill = resi_change)) + 
   geom_bar(stat="identity", position="fill")+
   scale_fill_brewer(palette = "Oranges") + 
   labs(x= "만족도변화없음", y=NULL, fill="주택가격변화") +
   theme_minimal() + 
-  scale_x_discrete(labels = c("1" = "60대 미만", "2" = "60대", "3" = "70대", "4" = "80대 이상")) +
+  scale_x_discrete(labels = c("1" = "40~50대", "2" = "60대", "3" = "70대", "4" = "80대 이상")) +
   ggtitle("Comparison of Housing Price Changes by Age") +
   xlab("삶의 만족도 동일집단") + ylab("Total number") + 
   theme(
     plot.title = element_text(color="black", size=14, face="bold", hjust = 0.5 ),
     axis.title.x = element_text(color="black", size=11, face="bold"),
-    axis.title.y = element_text(color="black", size=11, face="bold" )) 
+    axis.title.y = element_text(color="black", size=11, face="bold" ))
+
 
 ggplot(satibad, aes(x=age_range, y=n, fill = resi_change)) + 
   geom_bar(stat="identity", position="fill")+
   scale_fill_brewer(palette = "Oranges") + 
   labs(x= "만족도감소", y=NULL, fill="주택가격변화") +
   theme_minimal() + 
-  scale_x_discrete(labels = c("1" = "60대 미만", "2" = "60-70대", "3" = "70-80대", "4" = "80대 이상")) +
+  scale_x_discrete(labels = c("1" = "40~50대", "2" = "60-70대", "3" = "70-80대", "4" = "80대 이상")) +
   ggtitle("Comparison of Housing Price Changes by Age") +
   xlab("삶의 만족도 하락집단") + ylab("Total number") + 
   theme(
@@ -362,16 +486,60 @@ ggplot(satibad, aes(x=age_range, y=n, fill = resi_change)) +
     axis.title.y = element_text(color="black", size=11, face="bold" )) 
 
 
+## 주택가격 변화 집단별 삶의 만족도 변화(Orange color)
+ggplot(resiup, aes(x=age_range, y=n, fill = sati_change)) + 
+  geom_bar(stat="identity", position="fill")+
+  scale_fill_brewer(palette = "Oranges") + 
+  labs(x= "삶의 만족도 상승집단", y=NULL, fill="삶의 만족도 변화") +
+  theme_minimal() + 
+  scale_x_discrete(labels = c("1" = "40~50대", "2" = "60대", "3" = "70대", "4" = "80대 이상")) +
+  ggtitle("Comparison of changes in life satisfaction by age group") +
+  xlab("거주 주택가격 상승 집단") + ylab("Total number") + 
+  theme(
+    plot.title = element_text(color="black", size=14, face="bold", hjust = 0.5 ),
+    axis.title.x = element_text(color="black", size=11, face="bold"),
+    axis.title.y = element_text(color="black", size=11, face="bold" ))
 
-## 연령대별 변화 histogram
+ggplot(resisame, aes(x=age_range, y=n, fill = sati_change)) + 
+  geom_bar(stat="identity", position="fill")+
+  scale_fill_brewer(palette = "Oranges") + 
+  labs(x= "삶의 만족도 변화없음", y=NULL, fill="삶의 만족도 변화") +
+  theme_minimal() + 
+  scale_x_discrete(labels = c("1" = "40~50대", "2" = "60대", "3" = "70대", "4" = "80대 이상")) +
+  ggtitle("Comparison of changes in life satisfaction by age group") +
+  xlab("거주 주택가격 동일 집단") + ylab("Total number") + 
+  theme(
+    plot.title = element_text(color="black", size=14, face="bold", hjust = 0.5 ),
+    axis.title.x = element_text(color="black", size=11, face="bold"),
+    axis.title.y = element_text(color="black", size=11, face="bold" )) 
+
+ggplot(residown, aes(x=age_range, y=n, fill = sati_change)) + 
+  geom_bar(stat="identity", position="fill")+
+  scale_fill_brewer(palette = "Oranges") + 
+  labs(x= "만족도감소", y=NULL, fill="삶의 만족도 변화") +
+  theme_minimal() + 
+  scale_x_discrete(labels = c("1" = "40~50대", "2" = "60대", "3" = "70대", "4" = "80대 이상")) +
+  ggtitle("Comparison of changes in life satisfaction by age group") +
+  xlab("거주 주택가격 하락 집단") + ylab("Total number") + 
+  theme(
+    plot.title = element_text(color="black", size=14, face="bold", hjust = 0.5 ),
+    axis.title.x = element_text(color="black", size=11, face="bold"),
+    axis.title.y = element_text(color="black", size=11, face="bold" )) 
+
+
+
+
+
+
+## 주택가격 변화 집단별 삶의 만족도 변화(not orange)
 ggplot(resiup, aes(x=age_range, y=n, fill = sati_change)) + 
   geom_bar(stat="identity", position="fill")+
   scale_fill_brewer(palette = "RdPu") + 
   labs(x= "주택가격상승", y=NULL, fill="만족도변화") +
   theme_minimal() + 
-  scale_x_discrete(labels = c("1" = "60대 미만", "2" = "60대", "3" = "70대", "4" = "80대 이상")) +
-  ggtitle("Comparison of satisfaction by age") +
-  xlab("주택가격 상승집단") + ylab("Total number") + 
+  scale_x_discrete(labels = c("1" = "40~50대", "2" = "60대", "3" = "70대", "4" = "80대 이상")) +
+  ggtitle("Comparison of changes in life satisfaction by age group") +
+  xlab("거주 주택가격 상승집단") + ylab("Total number") + 
   theme(
     plot.title = element_text(color="black", size=14, face="bold", hjust = 0.5 ),
     axis.title.x = element_text(color="black", size=11, face="bold"),
@@ -382,9 +550,9 @@ ggplot(resisame, aes(x=age_range, y=n, fill = sati_change)) +
   scale_fill_brewer(palette = "RdPu") + 
   labs(x= "주택가격 동일집단", y=NULL, fill="만족도변화") +
   theme_minimal() + 
-  scale_x_discrete(labels = c("1" = "60대 미만", "2" = "60대", "3" = "70대", "4" = "80대 이상")) +
-  ggtitle("Comparison of satisfaction by age") +
-  xlab("주택가격 동일집단") + ylab("Total number") + 
+  scale_x_discrete(labels = c("1" = "40~50대", "2" = "60대", "3" = "70대", "4" = "80대 이상")) +
+  ggtitle("Comparison of changes in life satisfaction by age group") +
+  xlab("거주 주택가격 동일집단") + ylab("Total number") + 
   theme(
     plot.title = element_text(color="black", size=14, face="bold", hjust = 0.5 ),
     axis.title.x = element_text(color="black", size=11, face="bold"),
@@ -395,9 +563,9 @@ ggplot(residown, aes(x=age_range, y=n, fill = sati_change)) +
   scale_fill_brewer(palette = "RdPu") + 
   labs(x= "주택가격 하락집단", y=NULL, fill="만족도변화") +
   theme_minimal() + 
-  scale_x_discrete(labels = c("1" = "60대 미만", "2" = "60대", "3" = "70대", "4" = "80대 이상")) +
-  ggtitle("Comparison of satisfaction by age") +
-  xlab("Days of Week") + ylab("Total number") + 
+  scale_x_discrete(labels = c("1" = "40~50대", "2" = "60대", "3" = "70대", "4" = "80대 이상")) +
+  ggtitle("Comparison of changes in life satisfaction by age group") +
+  xlab("거주 주택가격 하락집단") + ylab("Total number") + 
   theme(
     plot.title = element_text(color="black", size=14, face="bold", hjust = 0.5 ),
     axis.title.x = element_text(color="black", size=11, face="bold"),
@@ -422,12 +590,12 @@ str(df4)
 
 ggplot(resiup, aes(x=gender, y=n, fill = sati_change)) + 
   geom_bar(stat="identity", position="fill")+
-  scale_fill_brewer(palette = "Set3") + 
+  scale_fill_brewer(palette = "Oranges") + 
   labs(x= "주택가격상승", y=NULL, fill="만족도변화") +
   theme_minimal() + 
   scale_x_discrete(labels = c("1" = "남", "5" = "여")) +
-  ggtitle("Gender Satisfaction Comparison") +
-  xlab("주택가격 상승집단") + ylab("Total number") + 
+  ggtitle("Comparison of Gender Satisfaction Changes in Residential Housing Prices") +
+  xlab("거주 주택가격 상승집단") + ylab("Total number") + 
   theme(
     plot.title = element_text(color="black", size=14, face="bold", hjust = 0.5 ),
     axis.title.x = element_text(color="black", size=11, face="bold"),
@@ -439,8 +607,8 @@ ggplot(resisame, aes(x=gender, y=n, fill = sati_change)) +
   labs(x= "주택가격 변화없는 집단", y=NULL, fill="만족도변화") +
   theme_minimal() + 
   scale_x_discrete(labels = c("1" = "남", "5" = "여")) +
-  ggtitle("Gender Satisfaction Comparison") +
-  xlab("주택가격 변화없는 집단") + ylab("Total number") + 
+  ggtitle("Comparison of Gender Satisfaction Changes in Residential Housing Prices") +
+  xlab("거주 주택가격 동일집단") + ylab("Total number") + 
   theme(
     plot.title = element_text(color="black", size=14, face="bold", hjust = 0.5 ),
     axis.title.x = element_text(color="black", size=11, face="bold"),
@@ -449,11 +617,11 @@ ggplot(resisame, aes(x=gender, y=n, fill = sati_change)) +
 ggplot(residown, aes(x=gender, y=n, fill = sati_change)) + 
   geom_bar(stat="identity", position="fill")+
   scale_fill_brewer(palette = "Set3") + 
-  labs(x= "주택가격 하락집단", y=NULL, fill="만족도변화") +
+  labs(x= "거주 주택가격 하락집단", y=NULL, fill="만족도변화") +
   theme_minimal() + 
   scale_x_discrete(labels = c("1" = "남", "5" = "여")) +
-  ggtitle("Gender Satisfaction Comparison") +
-  xlab("주택가격 하락집단") + ylab("Total number") + 
+  ggtitle("Comparison of Gender Satisfaction Changes in Residential Housing Prices") +
+  xlab("거주 주택가격 하락집단") + ylab("Total number") + 
   theme(
     plot.title = element_text(color="black", size=14, face="bold", hjust = 0.5 ),
     axis.title.x = element_text(color="black", size=11, face="bold"),
@@ -499,11 +667,11 @@ str(df5)
 ggplot(resiup, aes(x=age_range, y=n, fill = relation_range)) + 
   geom_bar(stat="identity", position="fill") +
   scale_fill_brewer(palette = "Set3") + 
-  labs(x= "주택가격상승", y=NULL, fill="자녀와의 관계") +
+  labs(x= "주택가격상승", y=NULL, fill="관계변화") +
   theme_minimal() + 
-  scale_x_discrete(labels = c("1" = "60대 미만", "2" = "60대", "3" = "70대", "4" = "80대 이상")) +
-  ggtitle("자녀와의 관계") +
-  xlab("주택가격 상승") + ylab("Total number") + 
+  scale_x_discrete(labels = c("1" = "40~50대", "2" = "60대", "3" = "70대", "4" = "80대 이상")) +
+  ggtitle("Family Relations") +
+  xlab("거주 주택가격 상승집단") + ylab("Total number") + 
   theme(
     plot.title = element_text(color="black", size=14, face="bold", hjust = 0.5 ),
     axis.title.x = element_text(color="black", size=11, face="bold"),
@@ -513,11 +681,11 @@ ggplot(resiup, aes(x=age_range, y=n, fill = relation_range)) +
 ggplot(resisame, aes(x=age_range, y=n, fill = relation_range)) + 
   geom_bar(stat="identity", position="fill") +
   scale_fill_brewer(palette = "Set3") + 
-  labs(x= "주택가격상승", y=NULL, fill="자녀와의 관계") +
+  labs(x= "주택가격상승", y=NULL, fill="관계변화") +
   theme_minimal() + 
-  scale_x_discrete(labels = c("1" = "60대 미만", "2" = "60대", "3" = "70대", "4" = "80대 이상")) +
-  ggtitle("자녀와의 관계") +
-  xlab("주택가격 변동없음") + ylab("Total number") + 
+  scale_x_discrete(labels = c("1" = "40~50대", "2" = "60대", "3" = "70대", "4" = "80대 이상")) +
+  ggtitle("Family Relations") +
+  xlab("거주 주택가격 동일집단") + ylab("Total number") + 
   theme(
     plot.title = element_text(color="black", size=14, face="bold", hjust = 0.5 ),
     axis.title.x = element_text(color="black", size=11, face="bold"),
@@ -526,11 +694,11 @@ ggplot(resisame, aes(x=age_range, y=n, fill = relation_range)) +
 ggplot(residown, aes(x=age_range, y=n, fill = relation_range)) + 
   geom_bar(stat="identity", position="fill") +
   scale_fill_brewer(palette = "Set3") + 
-  labs(x= "주택가격상승", y=NULL, fill="자녀와의 관계") +
+  labs(x= "주택가격하락", y=NULL, fill="관계변화") +
   theme_minimal() + 
-  scale_x_discrete(labels = c("1" = "60대 미만", "2" = "60대", "3" = "70대", "4" = "80대 이상")) +
-  ggtitle("자녀와의 관계") +
-  xlab("주택가격 하락") + ylab("Total number") + 
+  scale_x_discrete(labels = c("1" = "40~50대", "2" = "60대", "3" = "70대", "4" = "80대 이상")) +
+  ggtitle("Family Relations") +
+  xlab("거주 주택가격 하락집단") + ylab("Total number") + 
   theme(
     plot.title = element_text(color="black", size=14, face="bold", hjust = 0.5 ),
     axis.title.x = element_text(color="black", size=11, face="bold"),
