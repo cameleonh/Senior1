@@ -1,0 +1,202 @@
+library(tidyverse) #install.packages("tidyverse")
+library(readxl) #install.packages("readXL") : excel, csv 파일 열기
+library(psych) #install.packages("psych") : kurtosi, skew
+library(descr) #install.packages("descr") : freq(빈도)
+library(car) #install.packages("car") :다중공선성테스트, vif, ncvtest
+library(outreg) #install.packages("outreg") : model1+model2+model3
+library(lm.beta) #install.packages("lm.beta") : 표준화계수
+library(lawstat) #install.packages("lawstat") : 등분산성 검정
+library(agricolae) #install.packages("agricolae") : anova 사후검정(turkey검정)
+library(ggfortify) #install.packages("ggfortify") : 잔차분석 산점도 그릴때
+library(lmtest) #install.packages("lmtest") : 회귀결과 이분산성 테스트
+library(ggmosaic) #install.packages("ggmosaic") : 막대 그래프 그리기1
+library(gmodels) #install.packages(“gmodels”) : 막대 그래프 그리기2
+library(corrplot)
+library(readxl);library(foreign)
+library(plyr)
+library(knitr)
+library(lavaan)
+library(semPlot)
+library(summarytools)
+library(devtools)
+# library(epmr)
+library(ggplot2)
+library(GGally)
+library(DescTools)
+library(nord)
+library(DT)
+library(fastDummies)
+library(sjPlot)
+library(plotly)
+library(highcharter)
+library(kableExtra)
+
+
+
+
+
+
+
+rm(list=ls())
+
+raw_data07 <- read.csv("w07.csv", header = T, stringsAsFactors = F)
+raw_data08 <- read.csv("w08.csv", header = T, stringsAsFactors = F)
+
+
+data07 <- raw_data07
+data08 <- raw_data08
+
+data07_w <- select(data07, pid, w07enu_type, w07F001, w07F007, w07G026, w07G027, w07G028, w07G029, w07G030)
+data08_w <- select(data08, pid, w08enu_type, w08F001, w08F007, w08G026, w08G027, w08G028, w08G029, w08G030)
+
+data07_w <- rename(data07_w,
+                   # housetype = w07enu_type,     # 주거종류 or 거주형태
+                   ownership07 = w07F001,       # 주택소유여부
+                   houseprice18 = w07F007,      # 주택가격
+                   sati1_07 = w07G026,          # 건강상태
+                   sati2_07 = w07G027,          # 경제상태
+                   sati3_07 = w07G028,          # 배우자와의 관계
+                   sati4_07 = w07G029,          # 자녀와의 관계
+                   sati5_07 = w07G030           # 전반적인 삶의 질
+)
+
+data08_w <- rename(data08_w,
+                   housetype = w08enu_type,     # 주거종류 or 거주형태
+                   ownership08 = w08F001,       # 주택소유여부
+                   houseprice20 = w08F007,      # 주택가격
+                   sati1_08 = w08G026,          # 건강상태
+                   sati2_08 = w08G027,          # 경제상태
+                   sati3_08 = w08G028,          # 배우자와의 관계
+                   sati4_08 = w08G029,          # 자녀와의 관계
+                   sati5_08 = w08G030           # 전반적인 삶의 질
+)
+
+data <- merge(data07_w, data08_w, by = "pid")
+names(data)
+
+data$ownership <- data$ownership08
+data$houseprice <- data$houseprice20 - data$houseprice18
+data$sati1 <- data$sati1_08 - data$sati1_07
+data$sati2 <- data$sati2_08 - data$sati2_07
+data$sati3 <- data$sati3_08 - data$sati3_07
+data$sati4 <- data$sati4_08 - data$sati4_07
+data$sati5 <- data$sati5_08 - data$sati5_07
+# data <- data |> mutate(pricegroup = ifelse(houseprice > 0, "upgroup", 
+#                                            ifelse(houseprice < 0, "downgroup", "NA")))
+data <- data |> mutate(pricegroup = ifelse(houseprice > 0, "upgroup", "downgroup"))
+data <- data |> select('pid', 'ownership', 'housetype', 'houseprice', 'pricegroup', 'sati1', 'sati2', 'sati3', 'sati4', 'sati5')
+
+
+## type conversion
+str(data)
+attach(data)
+data$pid <- as.character(pid)
+data$ownership <- as.character(pid)
+data$housetype <- as.character(pid)
+
+
+## EDA
+dim(data)
+attributes(data)
+# data$resi = log(data$resi + 0.01)
+# data <- na.omit(data)
+summary(data)
+describe(data)
+
+
+price_up <- data |> filter(pricegroup == "upgroup");price_up
+mean(price_up$houseprice)
+
+## 
+# barplot(data, col=rainbow(6), legend=
+#           c('Upgroup', 'Downgroup'),
+#         xlim = c(0, ncol(tab)+2, xlab="--", ylab="Number of ",
+#                  args.legend=list(x=ncol(tab)+2),
+#                                   y=max(colSums(tab)),bty="n"))
+str(price_up)
+ggplot(data=price_up, aes(x=houseprice, y=sati1)) + geom_point()
+ggplot(data=price_up, aes(x=houseprice, y=sati2)) + geom_point()
+ggplot(data=price_up, aes(x=houseprice, y=sati3)) + geom_point()
+ggplot(data=price_up, aes(x=houseprice, y=sati4)) + geom_point()
+ggplot(data=price_up, aes(x=houseprice, y=sati5)) + geom_point()
+
+
+
+# 집단 분할하고, 통계량 구하기
+price_up |> group_by(pricegroup) |> summarise(mean = mean(houseprice))
+
+
+
+
+# 6) 상관분석 및 시각화
+# 6-1) 상관분석
+b_continues <- data |> select(houseprice, sati1, sati2, sati3, sati4, sati5)
+cor <- cor(b_continues, use="complete.obs");cor
+
+# 6-2) 시각화
+cor(b_continues) |> corrplot()
+cor(b_continues) |> corrplot(method='number')
+cor(b_continues) |> corrplot(type='lower', method = 'ellipse')
+
+
+df_up = price_up %>% filter(houseprice == "upgroup")
+gmodel <- lm(sati1 ~ 1+houseprice + housetype, data = df_up)
+plot(sati1 ~ houseprice, data = df_up)
+abline(gmodel, col='red')
+summary(gmodel)
+
+## 일반선형회귀모델 설정
+df_up = price_up %>% filter(houseprice == "upgroup")
+ols_model <- as.formula('sati1~+housetype+houseprice')
+ols_up <- lm(formula=ols_model,data=df_up)
+summary(ols_model)
+
+## 2023년 회귀분석 결과 정리
+# - sjplot 패키지의 tab_model 함수 사용
+# - 회귀분석 결과를 MS word(doc)파일로 저장
+
+tab_model(ols_2023,title = '거주주택 가격이 삶의 만족도에 미치는 영향',
+          show.std=TRUE,#표준화회귀계수
+          digits = 1, digits.p = 3,file = "reg_2023.doc")
+
+
+
+## 표준화 회귀계수 비교
+plot_model(ols_2023,title = '표준화 회귀계수',type='std') + theme_sjplot()
+
+
+## 회귀분석 잔차 검정
+# - Residuals vs Fitted: X축 예측값, Y축 잔차
+# - Normal Q-Q: 잔차의 정규분포검정
+# - Scale-Location: X 축 예측값, Y축에 표준화 잔차
+# - Residuals vs Leverage: X 축에 레버리지Leverage, Y 축에 표준화 잔차
+# - Cook's distance
+# - Cook's distance and leverage
+
+
+par(mfrow=c(3,2),mar=c(2,2,2,2))
+plot(ols_2023,which=c(1:6))
+
+
+
+# 다수의 모델 비교
+# - 2023년 모델과 2022년 모델을 하나의 테이블에 정리
+# - 정리표를 MS Word 파일로 저장
+
+df_2022 = seoul_apt %>% filter(년=='2022년' & 월=='1월') %>%
+  mutate(건물연령=2022-건축년도) %>%
+  dummy_cols(.,select_columns = "자치구이름",remove_first_dummy = TRUE)
+
+ols_2022 <- lm(formula=ols_model,data=df_2022)
+
+tab_model(
+  ols_2023,ols_2022,
+  show.aic = TRUE,
+  dv.labels = c("2023년", "2022년"),
+  string.pred = "Coeffcient",
+  string.p = "P-Value",
+  show.ci = FALSE,
+  p.style = "stars",
+  p.threshold = c(0.1, 0.05, 0.01),
+  title = '2023,2022년 서울시 아파트 거래_회귀분석 비교',show.std=TRUE,
+  digits = 1, digits.p = 3,file = "reg_2023_2022.doc")
