@@ -1,0 +1,389 @@
+---
+title: "고령층의 거주주택 가격 변화가 가족관계와 삶의 만족도에 미치는 영향"
+author: '연구자 : 박철훈, 교신저자 : 김준형'
+date: "`r format(Sys.Date())`"
+output:
+  html_document:
+    highlight: textmate
+    theme: flatly
+    toc: yes
+    toc_depth: 2
+    toc_float: yes
+    number_section: yes
+    code_folding: hide
+  pdf_document:
+    toc: yes
+    toc_depth: '2'
+editor_options:
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE,
+                      fig.height = 4, fig.width = 6, fig.align = "center")
+options(scipen = 1, digits = 2) 
+```
+
+<center><img src = "https://m.media-amazon.com/images/I/81KLDfIHKvL.jpg" width=300></center>
+
+
+## Intro
+> 이 책의 내용은 자신의 아이들을 버리기 위해 철저한 여행 계획을 짜는  나쁜 부모들이 등장    
+> 그렇게 남겨진 아이들이 자신들의 운명을 직접 개책해나가는 내용  
+> 비슷한 컨셉으로 본 논문에서는 유례없는 경제 위기 하에서 거주주택 자산에 대한 인간의 욕망, 탐욕, 민낯과 본성을 파헤쳐보고자 함
+
+
+
+> 현재 작업 폴더는 `r getwd()` 입니다.
+## Import Library
+
+```{r Import Library, echo=FALSE}
+Sys.getlocale() #인코딩정보 확인
+Sys.setlocale("LC_ALL", "C") #초기 설정으로 변경 (C)
+#Sys.setlocale("LC_ALL", "UTF-8")
+library(tidyverse) #install.packages("tidyverse")
+library(readxl) #install.packages("readXL") : excel, csv 파일 열기
+library(psych) #install.packages("psych") : kurtosi, skew
+library(descr) #install.packages("descr") : freq(빈도)
+library(car) #install.packages("car") :다중공선성테스트, vif, ncvtest
+library(outreg) #install.packages("outreg") : model1+model2+model3
+library(lm.beta) #install.packages("lm.beta") : 표준화계수
+library(lawstat) #install.packages("lawstat") : 등분산성 검정
+library(agricolae) #install.packages("agricolae") : anova 사후검정(turkey검정)
+library(ggfortify) #install.packages("ggfortify") : 잔차분석 산점도 그릴때
+library(lmtest) #install.packages("lmtest") : 회귀결과 이분산성 테스트
+library(ggmosaic) #install.packages("ggmosaic") : 막대 그래프 그리기1
+library(gmodels) #install.packages(“gmodels”) : 막대 그래프 그리기2
+library(corrplot)
+library(readxl);library(foreign)
+library(plyr)
+library(knitr)
+library(lavaan)
+library(semPlot)
+library(summarytools)
+library(devtools)
+# library(epmr)
+library(ggplot2)
+library(GGally)
+library(DescTools)
+library(nord)
+library(DT)
+library(fastDummies)
+library(sjPlot)
+library(plotly)
+library(highcharter)
+library(kableExtra)
+```
+
+
+
+
+## Set working directory and Loading dataset
+```{r Set working directory}
+rm(list=ls())
+# setwd("C:/000_22년/01_박사과정/2_고령층의 거주주택 가격 변화가 가족관계와 삶의 만족도에 미치는 영향/0_DATA/KLoSA_EXCEL_2022v3")
+# getwd()
+graphics.off()
+cat('\014')
+#list.files()
+```
+
+
+
+## Prepare Data
+```{r Prepare Data}
+raw_data07 <- read.csv("Lt07.csv", header = T, stringsAsFactors = F)
+raw_data08 <- read.csv("Lt08.csv", header = T, stringsAsFactors = F)
+
+data07 <- raw_data07
+data08 <- raw_data08
+
+data07 <- subset(data07, 
+                 select=c(pid,
+                          w07edu,
+                          w07gender1,
+                          w07A002_age,
+                          w07A036,
+                          w07edu_s,
+                          w07enu_type,
+                          w07C152,
+                          w07residence,
+                          w07G026,
+                          w07G027,
+                          w07G028,
+                          w07G029,
+                          w07G030,
+                          w07hhnetassets,
+                          # w07D_com147,
+                          w07marital,
+                          w07region1,
+                          w07region2,
+                          w07region3,
+                          w07present_ecotype,
+                          w07present_labor,
+                          w07wage))
+
+data08 <- subset(data08, 
+                 select=c(pid,
+                          w08edu,
+                          w08gender1,
+                          w08A002_age,
+                          w08A036,
+                          w08edu_s,
+                          w08enu_type,
+                          # w06A035_06,
+                          w08C152,
+                          w08residence,
+                          w08G026,
+                          w08G027,
+                          w08G028,
+                          w08G029,
+                          w08G030,
+                          w08hhnetassets,
+                          w08region1,
+                          w08region2,
+                          w08region3,
+                          w08marital,
+                          # w08D_com147,
+                          w08present_ecotype,
+                          w08present_labor,
+                          w08wage))
+
+
+## Rename
+data07 <- rename(data07,
+                  Age07 = w07A002_age,            # 나이
+                  Heads07 = w07A036,              # 가구주 여부
+                  Marriage07 = w07marital,        # 혼인상태
+                  Sex07 = w07gender1,             # 성별
+                  Edu07 = w07edu,                 # 응답자 학력
+                  Spouseedu07 = w07edu_s,         # 배우자 학력
+                  # religion07 = w07A035_06,        # 종교
+                  Hometype07 = w07enu_type,       # 주택타입
+                  Ownhealth07 = w07C152,          # 주관적 건강상태
+                  Homevalue07 = w07residence,     # 현재 거주주택 자산가치
+                  Health18 = w07G026,             # 자신의 건강상태
+                  Eco18 = w07G027,                # 자신의 경제상태
+                  Partner18 = w07G028,            # 배우자와의 관계
+                  Relation18 = w07G029,           # 자녀와의 관계
+                  Life18 = w07G030,               # 전반적인 삶의 질
+                  # Sati6 = w07D_com147,         # (은퇴자)은퇴에 대한 만족도
+                  Netasset07 = w07hhnetassets,    # 가구순자산(=총자산-총부채)
+                  Sido07 = w07region1,            # 거주지역_시도
+                  Emd07 = w07region2,             # 거주지역_읍면동
+                  Djs07 = w07region3,             # 거주지역_대/중소도시/읍면부
+                  Working07 = w07present_labor,   # 현재 노동여부
+                  Wage07 = w07wage)               # 지난해 임금소득
+
+
+
+data08 <- rename(data08,
+                  Age08 = w08A002_age,            # 나이
+                  Heads08 = w08A036,              # 가구주 여부
+                  Marriage08 = w08marital,        # 혼인상태
+                  Sex08 = w08gender1,             # 성별
+                  Edu08 = w08edu,                 # 응답자 학력
+                  Spouseedu08 = w08edu_s,         # 배우자 학력
+                  # religion08 = w08A035_06,       # 종교
+                  Hometype08 = w08enu_type,       # 주택타입
+                  Ownhealth08 = w08C152,          # 주관적 건강상태
+                  Homevalue08 = w08residence,     # 현재 거주주택 자산가치
+                  Health20 = w08G026,             # 자신의 건강상태
+                  Eco20 = w08G027,                # 자신의 경제상태
+                  Partner20 = w08G028,            # 배우자와의 관계
+                  Relation20 = w08G029,           # 자녀와의 관계
+                  Life20 = w08G030,               # 전반적인 삶의 질
+                  # Sati6 = w08D_com147,         # (은퇴자)은퇴에 대한 만족도
+                  Netasset08 = w08hhnetassets,    # 가구순자산(=총자산-총부채)
+                  Sido08 = w08region1,            # 거주지역_시도
+                  Emd08 = w08region2,             # 거주지역_읍면동
+                  Djs08 = w08region3,             # 거주지역_대/중소도시/읍면부
+                  Working08 = w08present_labor,   # 현재 노동여부
+                  Wage08 = w08wage)               # 지난해 임금소득
+
+## Data Merging
+data <- merge(data07, data08, by = "pid")
+describe(data)
+
+
+## Add Data
+data$resi = data$Homevalue08 - data$Homevalue07
+data$relation = data$Relation20 - data$Relation18
+head(data$resi)
+head(data$relation)
+
+
+## type conversion
+str(data)
+data$Age07 <- data$Age07 %>% as.numeric()
+data$Age08 <- data$Age08 %>% as.numeric()
+data$Heads07 <- ifelse(data$Heads07 == 1, "yes", "no")
+data$Heads08 <- ifelse(data$Heads08 == 1, "yes", "no")
+data$Marriage07 <- ifelse(data$Marriage07 == 1, "marriage", ifelse(data$Marriage07 == 3, "divorce", NA))
+data$Marriage08 <- ifelse(data$Marriage08 == 1, "marriage", ifelse(data$Marriage08 == 3, "divorce", NA))
+# data$Sex07 <- ifelse(data$Sex07 == 1, "male", "female")
+data$Sex07 <- as.factor(data$Sex07)
+data$Sex08 <- as.factor(data$Sex08)
+# data$Sex08 <- ifelse(data$Sex08 == 1, "male", "female")
+data$Edu07 <- ifelse(data$Edu07 == 1, "Elemetry", ifelse(data$Edu07 == 2, "Mid", ifelse(data$Edu07 == 3, "MidSchool", ifelse(data$data$Edu07 == 4, "university", NA))))
+data$Edu08 <- ifelse(data$Edu08 == 1, "Elemetry", ifelse(data$Edu08 == 2, "Mid", ifelse(data$Edu08 == 3, "MidSchool", ifelse(data$Edu08 == 4, "university", NA))))
+data$Spouseedu07 <- as.factor(data$Spouseedu07)
+data$Spouseedu08 <- as.factor(data$Spouseedu08)
+data$Hometype07 <- ifelse(data$Hometype07 == 1, "house", "APT")
+data$Hometype08 <- ifelse(data$Hometype08 == 1, "house", "APT")
+data$Ownhealth07 <- as.factor(data$Ownhealth07)
+data$Ownhealth08 <- as.factor(data$Ownhealth08)
+data$Homevalue07 <- as.numeric(data$Homevalue07)
+data$Homevalue08 <- as.numeric(data$Homevalue08)
+data$Health18 <- as.factor(data$Health18)
+data$Health20 <- as.factor(data$Health20)
+data$Eco18 <- as.factor(data$Eco18)
+data$Eco20 <- as.factor(data$Eco20)
+data$Partner18 <- as.factor(data$Partner18)
+data$Partner20 <- as.factor(data$Partner20)
+data$Relation18 <- as.factor(data$Relation18)
+data$Relation20 <- as.factor(data$Relation20)
+data$Life18 <- as.factor(data$Life18)
+data$Life20 <- as.factor(data$Life20)
+data$Netasset07 <- as.numeric(data$Netasset07)
+data$Netasset08 <- as.numeric(data$Netasset08)
+# Working07 <- ifelse(Working07 == 1, "Work", "non-Work")
+data$Working07 <- as.factor(data$Working07)
+data$Working08 <- as.factor(data$Working08)
+data$Sido07 <- as.character(data$Sido07)
+data$Sido08 <- as.character(data$Sido08)
+data$Emd07 <- as.character(data$Emd07)
+data$Emd08 <- as.character(data$Emd08)
+data$Djs07 <- as.factor(data$Djs07)
+data$Djs08 <- as.factor(data$Djs08)
+data$Wage07 <- as.numeric(data$Wage07)
+data$Wage08 <- as.numeric(data$Wage08)
+str(data)
+```
+
+
+## Confirming Data
+```{r EDA}
+# freq(data$)
+head(data)
+# tail(data)
+# View(data)
+dim(data)
+# data$resi = log(data$resi + 0.01)
+# data <- na.omit(data)
+summary(data)
+describe(data)
+```
+
+
+## Data Cleansing
+```{r }
+# class(data$sex) # 전처리
+# table(data$sex) # 이상치 확인
+# data$sex <- ifelse(data$sex == 9, NA, welfare$sex) # 이상치 결측 처리
+# table(is.na(data$sex)) # 결측치 확인
+# data$sex <- ifelse(data$sex == 1, "male", "female") # 성별 항목 이름 부여
+# table(data$sex)
+# qplot(data$sex)
+```
+
+
+## Statistical Analysis(T-Test)
+```{r statistical analysis}
+
+# 양적변수 차이검정 T-Test
+ttest <- data |> select(Life18, Sex07)
+t.test(data=ttest, Life18~Sex07, var.equal=T)
+ttest <- data |> select(Life20, Sex08)
+t.test(data=ttest, Life20~Sex08, var.equal=T)
+ttest <- data |> select(Netasset08, Sex08)
+t.test(data=ttest, Netasset08~Sex08, var.equal=T)
+ttest <- data |> select(Partner20, Sex08)
+t.test(data=ttest, Partner20~Sex08, var.equal=T)
+ttest <- data |> select(Homevalue07, Working07)
+t.test(data=ttest, Homevalue07~Working07, var.equal=T)
+ttest <- data |> select(Hometype07, Working07)
+t.test(data=ttest, Hometype07~Working07, var.equal=T)
+
+# T-test 시각화
+# data |> ggplot(aes(x=Sex07, group=Life18, fill=Sex07)) + geom_density(alpha=.4)
+# data |> ggplot(aes(x=lum4, group=dev_code, fill=dev_code)) + geom_density(alpha=.2)
+```
+
+
+## Statistical analysis(Anova)
+```{r Anova}
+
+# Anova
+
+
+```
+
+
+## Statistical analysis(Correlation)
+```{r Correlation}
+# 6-1) 상관분석
+ggpairs(df, columns = 1:9, ggplot2::aes(colour = Sex07))+
+  scale_color_nord('aurora')+
+  #scale_color_nord('lumina')+
+  scale_fill_nord('aurora')+
+  theme_minimal()
+
+ggpairs(data, columns=1:7)
+
+
+data %>% 
+  pairs.panels(lm = T, stars = T)
+# b_continues <- data |> select(pv, lot_size_ha, no_of_lot, bcr, far, bus_dist_km, sub_dist_km, lum4)
+# cor <- cor(b_continues, use="complete.obs");cor
+
+# 6-2) 시각화
+cor(b_continues) |> corrplot()
+cor(b_continues) |> corrplot(method='number')
+cor(b_continues) |> corrplot(type='lower', method = 'ellipse')
+
+
+cor <- colorRampPalette('#BB4444', '#EE9988', '#FFFFFF', '#77AADD', '#4477AA')
+# 이 줄은 작성 중 cor(b_continues) |> corrplot(type='lower',)
+```
+
+
+
+
+## Statistical analysis(Multiple Regretion)
+```{r Multiple Regretion Analysis}
+# 7) 다중회귀분석
+group_lr <- aa |> filter(dev_code==1)
+group_hsd <- aa |> filter(dev_code==2)
+
+# 7-1) 전체모델
+model_lr <- lm(data=group_lr, formula=pv~lot_size_ha+no_of_lot+bcr+far+lum4+bus_dist_km+sub_dist_km+cbd_dummy+region_type_dummy)
+model_lr
+model_lr |> summary()
+lm.beta(model_lr) |> summary() # 표준화계수값
+
+# 7-2) 잔차분석(오차항의 등분산성, 정규성 충족 검사)
+par(mfrow=c(2,2)) #잔차분석a
+plot(model_lr) #잔차출력a
+
+# 7-3) 더빈왓슨 & 다중공선성
+durbinWatsonTest(model_lr)
+vif(model_lr)
+
+# 7-4) HSD모델
+model_hsd <- lm(data=group_hsd, formula=pv~lot_size_ha+no_of_lot+bcr+far+lum4+bus_dist_km+sub_dist_km+cbd_dummy+region_type_dummy)
+model_hsd
+model_hsd |> summary()
+lm.beta(model_hsd) |> summary() # 표준화계수값
+par(mfrow=c(2,2)) #잔차분석a
+plot(model_lr) #잔차출력a
+durbinWatsonTest(model_lr)
+vif(model_lr)
+
+# 7-5) 회귀결과 정리
+model_all <- list(model_lr, model_hsd)
+outreg(fitlist = model_all, alpha=c(0.1, 0.15, 0.01),
+       pv=T, se=F, starred = 'pv', bracket = 'pv')
+
+# 샘플수가 작다면 pls 회귀분석을 해야함
+```
