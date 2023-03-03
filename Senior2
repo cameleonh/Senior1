@@ -81,10 +81,10 @@ library(kableExtra)
 ## Set working directory and Loading dataset
 ```{r Set working directory}
 rm(list=ls())
-# setwd("C:/000_22년/01_박사과정/2_고령층의 거주주택 가격 변화가 가족관계와 삶의 만족도에 미치는 영향/0_DATA/KLoSA_EXCEL_2022v3")
-# getwd()
+# setwd("C:/Users/gtx1060/Desktop/2_고령층의 거주주택 가격 변화가 가족관계와 삶의 만족도에 미치는 영향/0_R_Code(230302)")
+getwd()
 graphics.off()
-cat('\014')
+# cat('\014')
 #list.files()
 ```
 
@@ -258,6 +258,8 @@ data$Djs07 <- as.factor(data$Djs07)
 data$Djs08 <- as.factor(data$Djs08)
 data$Wage07 <- as.numeric(data$Wage07)
 data$Wage08 <- as.numeric(data$Wage08)
+data$relation <- as.integer(data$relation)
+data$resi <- as.numeric(data$resi)
 str(data)
 ```
 
@@ -292,18 +294,18 @@ describe(data)
 ```{r statistical analysis}
 
 # 양적변수 차이검정 T-Test
-ttest <- data |> select(Life18, Sex07)
-t.test(data=ttest, Life18~Sex07, var.equal=T)
-ttest <- data |> select(Life20, Sex08)
-t.test(data=ttest, Life20~Sex08, var.equal=T)
-ttest <- data |> select(Netasset08, Sex08)
-t.test(data=ttest, Netasset08~Sex08, var.equal=T)
-ttest <- data |> select(Partner20, Sex08)
-t.test(data=ttest, Partner20~Sex08, var.equal=T)
-ttest <- data |> select(Homevalue07, Working07)
-t.test(data=ttest, Homevalue07~Working07, var.equal=T)
-ttest <- data |> select(Hometype07, Working07)
-t.test(data=ttest, Hometype07~Working07, var.equal=T)
+# ttest <- data |> select(Life18, Sex07)
+# t.test(data=ttest, Life18~Sex07, var.equal=T)
+# ttest <- data |> select(Life20, Sex08)
+# t.test(data=ttest, Life20~Sex08, var.equal=T)
+# ttest <- data |> select(Netasset08, Sex08)
+# t.test(data=ttest, Netasset08~Sex08, var.equal=T)
+# ttest <- data |> select(Partner20, Sex08)
+# t.test(data=ttest, Partner20~Sex08, var.equal=T)
+# ttest <- data |> select(Homevalue07, Working07)
+# t.test(data=ttest, Homevalue07~Working07, var.equal=T)
+# ttest <- data |> select(Hometype07, Working07)
+# t.test(data=ttest, Hometype07~Working07, var.equal=T)
 
 # T-test 시각화
 # data |> ggplot(aes(x=Sex07, group=Life18, fill=Sex07)) + geom_density(alpha=.4)
@@ -320,44 +322,48 @@ t.test(data=ttest, Hometype07~Working07, var.equal=T)
 ```
 
 
+
 ## Statistical analysis(Correlation)
 ```{r Correlation}
 # 6-1) 상관분석
-ggpairs(df, columns = 1:9, ggplot2::aes(colour = Sex07))+
+ggpairs(data, columns = c('Homevalue07', 'Health18','Eco18',
+                          'Netasset07', 'Wage07',
+                          'relation','resi'), ggplot2::aes(colour = Sex07))+
   scale_color_nord('aurora')+
   #scale_color_nord('lumina')+
   scale_fill_nord('aurora')+
   theme_minimal()
 
-ggpairs(data, columns=1:7)
+# ggpairs(data, columns=1:7)
 
 
-data %>% 
-  pairs.panels(lm = T, stars = T)
+# data %>% 
+#   pairs.panels(lm = T, stars = T)
 # b_continues <- data |> select(pv, lot_size_ha, no_of_lot, bcr, far, bus_dist_km, sub_dist_km, lum4)
 # cor <- cor(b_continues, use="complete.obs");cor
 
 # 6-2) 시각화
-cor(b_continues) |> corrplot()
-cor(b_continues) |> corrplot(method='number')
-cor(b_continues) |> corrplot(type='lower', method = 'ellipse')
+# cor(b_continues) |> corrplot()
+# cor(b_continues) |> corrplot(method='number')
+# cor(b_continues) |> corrplot(type='lower', method = 'ellipse')
 
 
-cor <- colorRampPalette('#BB4444', '#EE9988', '#FFFFFF', '#77AADD', '#4477AA')
+# cor <- colorRampPalette('#BB4444', '#EE9988', '#FFFFFF', '#77AADD', '#4477AA')
 # 이 줄은 작성 중 cor(b_continues) |> corrplot(type='lower',)
 ```
 
 
 
-
 ## Statistical analysis(Multiple Regretion)
 ```{r Multiple Regretion Analysis}
+
 # 7) 다중회귀분석
-group_lr <- aa |> filter(dev_code==1)
-group_hsd <- aa |> filter(dev_code==2)
+group_lr <- data |> filter(relation>=1)
+group_hsd <- data |> filter(relation<=0)
+
 
 # 7-1) 전체모델
-model_lr <- lm(data=group_lr, formula=pv~lot_size_ha+no_of_lot+bcr+far+lum4+bus_dist_km+sub_dist_km+cbd_dummy+region_type_dummy)
+model_lr <- lm(data=group_lr, formula=relation~Sex07+Edu07+Age07+Heads07+Hometype07+Health18+Eco18+Life18+Netasset07+Marriage07+Sido07+Wage07)
 model_lr
 model_lr |> summary()
 lm.beta(model_lr) |> summary() # 표준화계수값
