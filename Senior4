@@ -1,0 +1,399 @@
+---
+title: "고령층의 거주주택 가격 변화가 가족관계와 삶의 만족도에 미치는 영향"
+author: "연구자 : 박철훈, 교신저자 : 김준형"
+date: "`r format(Sys.Date())`" 
+output: 
+  html_document:
+    highlight: textmate
+    theme: flatly
+    toc: yes
+    toc_depth: 2
+    toc_float: yes
+    number_section: yes
+    code_folding: hide
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE,
+                      fig.height = 4, fig.width = 6, fig.align = "center")
+options(scipen = 1, digits = 2) 
+```
+
+<center><img src = "https://m.media-amazon.com/images/I/81KLDfIHKvL.jpg" width=300></center>
+
+> 이 책의 내용은 자신의 아이들을 버리기 위해 철저한 여행 계획을 짜는  나쁜 부모들이 등장    
+> 그렇게 남겨진 아이들이 자신들의 운명을 직접 개책해나가는 내용  
+> 비슷한 컨셉으로 본 논문에서는 유례없는 경제 위기 하에서 거주주택 자산에 대한 인간의 욕망, 탐욕, 민낯과 본성을 파헤쳐보고자 함
+
+## R Markdown
+```{r import pakages}
+Sys.getlocale() #인코딩정보 확인
+Sys.setlocale("LC_ALL", "C") #초기 설정으로 변경 (C)
+# Sys.setlocale("LC_ALL", "UTF-8")
+library(tidyverse) #install.packages("tidyverse")
+library(readxl) #install.packages("readXL") : excel, csv 파일 열기
+library(psych) #install.packages("psych") : kurtosi, skew
+library(descr) #install.packages("descr") : freq(빈도)
+library(car) #install.packages("car") :다중공선성테스트, vif, ncvtest
+library(outreg) #install.packages("outreg") : model1+model2+model3
+library(lm.beta) #install.packages("lm.beta") : 표준화계수
+library(lawstat) #install.packages("lawstat") : 등분산성 검정
+library(agricolae) #install.packages("agricolae") : anova 사후검정(turkey검정)
+library(ggfortify) #install.packages("ggfortify") : 잔차분석 산점도 그릴때
+library(lmtest) #install.packages("lmtest") : 회귀결과 이분산성 테스트
+library(ggmosaic) #install.packages("ggmosaic") : 막대 그래프 그리기1
+library(gmodels) #install.packages(“gmodels”) : 막대 그래프 그리기2
+library(corrplot)
+library(readxl);library(foreign)
+library(plyr);
+library(knitr);
+library(lavaan);
+library(semPlot);
+library(summarytools);
+library(devtools);
+library(epmr);
+library(ggplot2);
+library(GGally);
+library(DescTools);
+library(nord);
+library(DT)
+library(plotly)
+library(highcharter)
+```
+
+
+
+
+## Set working directory and Loading dataset
+```{r Setting}
+rm(list=ls())
+# setwd("I:/22년공부/0_논문작성/1_고령층의 자산변화가 가족관계와 삶의 만족도에 미치는 영향/0_DATA\KLoSA_EXCEL_2022v3")
+getwd()
+graphics.off()
+cat('\014')
+#list.files()
+```
+
+
+
+## Prepare Data
+```{r Preprocessing}
+raw_data07 <- read.csv("Lt07.csv", header = T)
+raw_data08 <- read.csv("Lt08.csv", header = T)
+
+data07 <- raw_data07
+data08 <- raw_data08
+
+data07 <- subset(data07, 
+                 select=c(pid,
+                          w07edu,
+                          w07gender1,
+                          w07A002_age,
+                          w07A036,
+                          w07enu_type,
+                          w07C152,
+                          w07residence,
+                          w07residence_,
+                          w07G026,
+                          w07G027,
+                          w07G028,
+                          w07G029,
+                          w07G030,
+                          w07G031,
+                          w07hhnetassets,
+                          w07region1,
+                          w07region2,
+                          w07region3))
+                 
+data08 <- subset(data08, 
+                 select=c(pid,
+                          w08edu,
+                          w08gender1,
+                          w08A002_age,
+                          w08A036,
+                          w08enu_type,
+                          w08C152,
+                          w08residence,
+                          w08residence_,
+                          w08G026,
+                          w08G027,
+                          w08G028,
+                          w08G029,
+                          w08G030,
+                          w08G031,
+                          w08hhnetassets,
+                          w08region1,
+                          w08region2,
+                          w08region3,
+                          w08marital,
+                          w08present_ecotype,
+                          w08present_labor))
+
+
+data07 <- rename(data07,
+                  house_price = w07residence, # 거주주택가격
+                  sex = w07gender1,        # 성별
+                  age = w07A002_age,       # 응답자 연령
+                  sati1 = w07G026,         # 자신의 건강상태
+                  sati2 = w07G027,         # 자신의 경제상태
+                  sati3 = w07G028,         # 배우자와의 관계
+                  sati4 = w07G029,         # 자녀와의 관계
+                  sati5 = w07G030,         # 전반적인 삶의 질
+                  # marriage = h10_g10,    # 혼인 상태
+                  # religion = w06A035_06,   # 종교
+                  # income = w07D_com052,    # 봉급_임금생활자
+                  # code_job = h10_eco9,     # 직업 코드
+                  code_region = w07region1)  # 지역 코드
+data07 <- data07 |> mutate(mean_sati07 = (sati1+sati2+sati3+sati4+sati5)/5)
+
+data08 <- rename(data08,
+                  house_price = w08residence, # 거주주택가격
+                  sex = w08gender1,        # 성별
+                  age = w08A002_age,     # 응답자 연령
+                  sati1 = w08G026,         # 자신의 건강상태
+                  sati2 = w08G027,         # 자신의 경제상태
+                  sati3 = w08G028,         # 배우자와의 관계
+                  sati4 = w08G029,         # 자녀와의 관계
+                  sati5 = w08G030,         # 전반적인 삶의 질
+                  # marriage = h10_g10,    # 혼인 상태
+                  # religion = w06A035_06,   # 종교
+                  # income = w08D_com052,    # 봉급_임금생활자
+                  # code_job = h10_eco9,     # 직업 코드
+                  code_region = w08region1)  # 지역 코드
+
+data08 <- data08|> mutate(mean_sati08 = (sati1+sati2+sati3+sati4+sati5)/5)
+
+
+data <- merge(data07, data08, by = "pid")
+
+
+data$var_house_price <- data$house_price.y - data$house_price.x
+data$var_sati_mean <- data$mean_sati08 - data$mean_sati07
+data$var_sati1 <- data$sati1.y - data$sati1.x
+data$var_sati2 <- data$sati2.y - data$sati2.x
+data$var_sati3 <- data$sati3.y - data$sati3.x
+data$var_sati4 <- data$sati4.y - data$sati4.x
+data$var_sati5 <- data$sati5.y - data$sati5.x
+data$relation <- data$sati4.y - data$sati4.x
+```
+
+## selection
+data <- data %>% 
+  select('pid', 'sex.x', 'age.y', 'var_house_price',
+         'var_sati_mean','var_sati1', 'var_sati2','var_sati3',
+         'var_sati4', 'var_sati5', 'relation')
+
+
+
+## Confirming Data
+```{r EDA}
+head(data)
+tail(data)
+dim(data)
+str(data)
+summary(data, na.rm = TRUE)
+```
+
+
+## Data Cleansing
+```{r }
+class(data$sex.x) # 전처리
+table(data$sex.x) # 이상치 확인
+sum(is.na(data$sex.x)) # 결측치 확인
+data$sex.x <- ifelse(data$sex.x == 9, NA, data$sex.x) # 이상치 결측 처리
+data$sex.x <- ifelse(data$sex.x == 1, "male", "female") # 성별 항목 이름 부여
+data <- data |> mutate(age = ifelse(age.y >= 80, 'super_old(80+)',
+                                   ifelse(age.y >= 65, 'senior(65+)', 'young_senior(64-)')))
+
+table(data$age)
+qplot(data$age)
+```
+
+## type conversion
+str(data)
+data$sex.x <- as.factor(data$sex.x)
+data$sex.x <- as.factor(data$sex.x)
+data$age <- as.factor(data$age)
+str(data)
+
+
+## 거주 주택가격 변화집단 이변량분석
+Up_price_group <- data |> filter(var_house_price >= 1)
+Up_price_group$sex.x <- as.factor(Up_price_group$sex.x)
+
+Down_price_group <- data |> filter(var_house_price <= 0)
+Down_price_group$sex.x <- as.factor(Down_price_group$sex.x)
+
+
+# 결측치 삭제
+sum(is.na(Up_price_group))
+Up_price_group <- na.omit(Up_price_group)
+
+sum(is.na(Down_price_group))
+Down_price_group <- na.omit(Down_price_group)
+
+
+
+
+
+
+
+
+## 이변량 그래프(hist)
+
+hist(Up_price_group$var_house_price, 
+     main="주택가격 상승집단",
+     xlab="주택가격 변화 금액",
+     ylab="Relative frequency",             # it's no londer the count!
+     breaks=50, 
+     col="lightblue", 
+     freq=TRUE,                            # freq=FALSE means to plot density, not counts
+     xaxt="n")                              # xaxt="n" means "x axis tick marks == no"
+
+axis(side=1, at=seq(0, 1000000, by=20))        # add the x axis (side=1) tick marks we want
+
+lines(density(Up_price_group$var_house_price, bw=10),    # "bw= ..." adjusts the smoothing
+      type="l", col="darkred", lwd=2)      # lwd = line width
+abline(v = mean(Up_price_group$var_house_price), col="blue", lwd = 2)
+
+
+
+
+
+## 이변량 그래프(box)
+boxplot(Up_price_group$var_house_price ~ Up_price_group$sex.x, horizontal=FALSE,
+        ylab="거주 주택가격 변화액", xlab="주택가격 변화 금액", las=1, # las=1 forces the axes to have text in the horizontal direction
+        main="주택가격 상승집단")
+
+## 일변량
+table(Up_price_group$age)
+qplot(Up_price_group$age)
+
+
+table(Down_price_group$age)
+qplot(Down_price_group$age)
+
+## 연령대별 
+ggplot(data = Up_price_group, aes(x = age.y, y = var_house_price, col = sex.x)) + geom_col()
+
+ggplot(data = Down_price_group, aes(x = age.y, y = var_house_price, col = sex.x)) + geom_col()
+
+## 상관분석
+
+
+### qq check for normality
+
+qqnorm(Up_price_group$var_house_price, main = 'Q-Q Plot var_house_price')
+qqline(Up_price_group$var_house_price)
+
+qqnorm(Down_price_group$var_house_price, main = 'Q-Q Plot var_house_price')
+qqline(Down_price_group$var_house_price)
+
+
+qqnorm(Up_price_group$var_sati_mean, main = 'Q-Q Plot var_house_price')
+qqline(Up_price_group$var_sati_mean)
+
+qqnorm(Up_price_group$var_sati1, main = 'Q-Q Plot var_house_price')
+qqline(Up_price_group$var_sati1)
+
+qqnorm(Up_price_group$var_sati2, main = 'Q-Q Plot var_house_price')
+qqline(Up_price_group$var_sati2)
+
+qqnorm(Up_price_group$var_sati3, main = 'Q-Q Plot var_house_price')
+qqline(Up_price_group$var_sati3)
+
+qqnorm(Up_price_group$var_sati4, main = 'Q-Q Plot var_house_price')
+qqline(Up_price_group$var_sati4)
+
+qqnorm(Up_price_group$var_sati5, main = 'Q-Q Plot var_house_price')
+qqline(Up_price_group$var_sati5)
+
+
+
+
+
+
+
+## descriptive Statistic
+dim(data)
+ncol(data)
+nrow(data)
+
+
+table(Up_price_group$var_house_price)
+table(Up_price_group$var_sati1)
+
+
+
+
+
+
+## 통계분석(차이검정)
+```{r statistical analysis}
+
+# 양적변수 차이검정 T-Test
+
+# ttest <- data |> select(pv, dev_code)
+# t.test(data=ttest, pv~dev_code, var.equal=T)
+# 
+# # T-test 시각화
+# data |> ggplot(aes(x=far, group=dev_code, fill=dev_code)) + geom_density(alpha=.4)
+# data |> ggplot(aes(x=lum4, group=dev_code, fill=dev_code)) + geom_density(alpha=.2)
+# 
+# # -------------------------------------------------------------------------
+# 
+# # 6) 상관분석 및 시각화
+# # 6-1) 상관분석
+# b_continues <- aa |> select(pv, lot_size_ha, no_of_lot, bcr, far, bus_dist_km, sub_dist_km, lum4)
+# cor <- cor(b_continues, use="complete.obs");cor
+# 
+# # 6-2) 시각화
+# cor(b_continues) |> corrplot()
+# cor(b_continues) |> corrplot(method='number')
+# cor(b_continues) |> corrplot(type='lower', method = 'ellipse')
+# 
+# 
+# cor <- colorRampPalette('#BB4444', '#EE9988', '#FFFFFF', '#77AADD', '#4477AA')
+# # 이 줄은 작성 중 cor(b_continues) |> corrplot(type='lower',)
+# 
+# # -------------------------------------------------------------------------
+# # 7) 다중회귀분석
+# group_lr <- aa |> filter(dev_code==1)
+# group_hsd <- aa |> filter(dev_code==2)
+# 
+# # 7-1) 전체모델
+# model_lr <- lm(data=group_lr, formula=pv~lot_size_ha+no_of_lot+bcr+far+lum4+bus_dist_km+sub_dist_km+cbd_dummy+region_type_dummy)
+# model_lr
+# model_lr |> summary()
+# lm.beta(model_lr) |> summary() # 표준화계수값
+# 
+# # 7-2) 잔차분석(오차항의 등분산성, 정규성 충족 검사)
+# par(mfrow=c(2,2)) #잔차분석a
+# plot(model_lr) #잔차출력a
+# 
+# # 7-3) 더빈왓슨 & 다중공선성
+# durbinWatsonTest(model_lr)
+# vif(model_lr)
+# 
+# # 7-4) HSD모델
+# model_hsd <- lm(data=group_hsd, formula=pv~lot_size_ha+no_of_lot+bcr+far+lum4+bus_dist_km+sub_dist_km+cbd_dummy+region_type_dummy)
+# model_hsd
+# model_hsd |> summary()
+# lm.beta(model_hsd) |> summary() # 표준화계수값
+# par(mfrow=c(2,2)) #잔차분석a
+# plot(model_lr) #잔차출력a
+# durbinWatsonTest(model_lr)
+# vif(model_lr)
+# 
+# # 7-5) 회귀결과 정리
+# model_all <- list(model_lr, model_hsd)
+# outreg(fitlist = model_all, alpha=c(0.1, 0.15, 0.01),
+#        pv=T, se=F, starred = 'pv', bracket = 'pv')
+
+# 샘플수가 작다면 pls 회귀분석을 해야함
+```
+
+
+
