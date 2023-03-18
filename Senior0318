@@ -1,0 +1,209 @@
+### Set working directory and Loading dataset
+
+rm(list=ls())
+# setwd("I:/22년공부/0_논문작성/1_고령층의 자산변화가 가족관계와 삶의 만족도에 미치는 영향/0_DATA/KLoSA_EXCEL_2022v3")
+getwd()
+graphics.off()
+cat('\014')
+list.files()
+
+
+##preparing
+
+#install package!!!
+#devtools::install_github("talbano/epmr")
+
+library(plyr);library(tidyverse);library(knitr);library(lavaan);library(summarytools);
+library(psych);library(devtools);library(epmr);library(ggplot2);library(GGally);
+library(DescTools);library(corrplot);library(semPlot);library(nord);
+
+# raw_data1 <- read.csv("Lt01.csv", header = T, fileEncoding = "euc-kr")
+# raw_data2 <- read.csv("Lt02.csv", header = T, fileEncoding = "euc-kr")
+# raw_data3 <- read.csv("Lt03.csv", header = T, fileEncoding = "euc-kr")
+# raw_data4 <- read.csv("Lt04.csv", header = T, fileEncoding = "euc-kr")
+# raw_data5 <- read.csv("Lt05.csv", header = T, fileEncoding = "euc-kr")
+# raw_data6 <- read.csv("Lt06.csv", header = T, fileEncoding = "euc-kr")
+raw_data7 <- read.csv("Lt07.csv", header = T, fileEncoding = "euc-kr")
+raw_data8 <- read.csv("Lt08.csv", header = T, fileEncoding = "euc-kr")
+data7 <- raw_data7
+data8 <- raw_data8
+
+data7 <- data7 %>% 
+  select(pid,
+         w07edu,
+         w07gender1,
+         w07A002_age,
+         w07A036,
+         w07enu_type,
+         w07C152,
+         w07residence,
+         w07residence_,
+         w07G026,
+         w07G027,
+         w07G028,
+         w07G029,
+         w07G030,
+         w07G031,
+         w07hhnetassets,
+         w07region1,
+         w07region2,
+         w07region3)
+
+data8 <- data8 %>% 
+  select(pid,
+         w08edu,
+         w08gender1,
+         w08A002_age,
+         w08A036,
+         w08enu_type,
+         w08C152,
+         w08residence,
+         w08residence_,
+         w08G026,
+         w08G027,
+         w08G028,
+         w08G029,
+         w08G030,
+         w08G031,
+         w08hhnetassets,
+         w08region1,
+         w08region2,
+         w08region3,
+         w08marital,
+         w08present_ecotype,
+         w08present_labor)
+
+names(data7)
+names(data8)
+
+df <- merge(data7, data8, by = "pid")
+
+
+describe(df)
+describe(df$w08hhnetassets)
+
+
+df$houseprice = df$w08residence - df$w07residence
+df$relation = df$w08G029 - df$w07G029
+#가구순자산 - 주택가격 = 순여유자산 총액
+df$assets = df$w08hhnetassets - df$w08residence
+
+head(df$houseprice)
+head(df$assets)
+
+
+df <- df %>% 
+  mutate(sati8 = (w08G026 + w08G027 + w08G028 + w08G030)/4)
+
+df <- df %>% 
+  mutate(sati7 = (w07G026 + w07G027 + w07G028 + w07G030)/4)
+
+df$sati = df$sati8 - df$sati7
+
+str(df)
+
+
+
+## selection
+df <- df %>% 
+  select('pid', 'w08gender1', 'w08A002_age', 'houseprice', 'sati','w08G026', 'w08G027', 
+         'w08G028', 'w08G029', 'w08G030', 'relation')
+
+df <- rename(df, gender = w08gender1)
+df <- rename(df, age = w08A002_age)
+df <- rename(df, health = w08G026)
+df <- rename(df, eco = w08G027)
+df <- rename(df, partner = w08G028)
+df <- rename(df, relation20 = w08G029)
+df <- rename(df, life = w08G030)
+# df <- rename(df, hierarchy = w08G031)
+
+
+
+## 거주주택 가격변화 집단 필터링
+df$age_range= ifelse(df$age >= 80, "4",
+                     ifelse(df$age >= 70, "3",
+                            ifelse(df$age >= 60, "2", "1")))
+#df$age_range = as.factor(df$age_range)
+
+df$sati_change= ifelse(df$houseprice > 0, "향상",
+                       ifelse(df$houseprice<0, "감소", "변화없음"))
+
+df$resi_change = ifelse(df$houseprice > 0, "상승",
+                        ifelse(df$houseprice<0, "하락", "유지"))
+
+
+sum(is.na(df$gender)) # 결측치 확인
+str(df)
+
+backup_data <- df #백업용
+
+
+# descriptive statistics
+df$houseprice = log(df$houseprice + 1)
+df <- na.omit(df)
+summary(df)
+describe(df)
+
+
+## prop stack graph2
+df2 <- df %>%  
+  count(resi_change, sati_change, age_range, sort = T) %>% 
+  na.omit()
+names(df2)
+
+satigood <- subset(df2, sati_change == "향상")
+satisame <- subset(df2, sati_change == "변화없음")
+satibad <- subset(df2, sati_change == "감소")
+
+satigood
+
+satigood <- ddply(satigood, "age_range", transform, percent_n = n/sum(n)*100)
+satisame <- ddply(satigood, "age_range", transform, percent_n = n/sum(n)*100)
+satibad <- ddply(satigood, "age_range", transform, percent_n = n/sum(n)*100)
+
+### 주택가격이 변한 집단/만족도 변화
+resiup <- subset(df2, resi_change == "상승")
+resisame <- subset(df2, resi_change == "유지")
+residown <- subset(df2, resi_change == "하락")
+
+
+
+## prop stack graph
+df2 <- df %>%  
+  count(resi_change, sati_change, age_range, sort = T) %>% 
+  na.omit()
+df2
+
+ggplot(df2, aes(x=resi_change, y=n, fill = sati_change)) + geom_col(position = "dodge")+
+  scale_fill_brewer(palette = "Oranges") + labs(x= "주택가격변화", y=NULL, fill="만족도 변화") +
+  theme_minimal()
+
+ggplot(df2, aes(x=resi_change, y=n, fill = sati_change)) + geom_col(show.legend = F) +
+  facet_wrap(~sati_change)
+
+
+
+# 분포도 히스토그램
+ggplot(satigood, aes(x=age_range, y=percent_n, fill = resi_change)) + 
+  geom_col(show.legend = F) + scale_fill_brewer(palette = "Oranges") + 
+  labs(x= "만족도변화", y=NULL, fill="주택가격변화") + theme_minimal()
+
+ggplot(satisame, aes(x=age_range, y=percent_n, fill = resi_change)) + 
+  geom_col(show.legend = F) + scale_fill_brewer(palette = "Oranges") + 
+  labs(x= "만족도변화", y=NULL, fill="주택가격변화") + theme_minimal()
+
+
+
+# correlation
+ggpairs(df, columns = 1:9, ggplot2::aes(colour = gender))+
+  scale_color_nord('aurora')+
+  #scale_color_nord('lumina')+
+  scale_fill_nord('aurora')+
+  theme_minimal()
+
+ggpairs(data, columns=1:7)
+
+
+data %>% 
+  pairs.panels(lm = T, stars = T)
