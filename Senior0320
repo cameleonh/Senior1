@@ -1,0 +1,355 @@
+## Set working directory and Loading dataset
+rm(list=ls())
+setwd("C:/Users/gtx1060/Desktop/0_R_Code(230302)")
+getwd()
+graphics.off()
+# cat('\014')
+list.files()
+
+## Preparing
+
+#install package!!!
+#devtools::install_github("talbano/epmr")
+
+library(tidyverse) #install.packages("tidyverse")
+library(readxl) #install.packages("readXL") : excel, csv 파일 열기
+library(psych) #install.packages("psych") : kurtosi, skew
+library(descr) #install.packages("descr") : freq(빈도)
+library(car) #install.packages("car") :다중공선성테스트, vif, ncvtest
+library(outreg) #install.packages("outreg") : model1+model2+model3
+library(lm.beta) #install.packages("lm.beta") : 표준화계수
+library(lawstat) #install.packages("lawstat") : 등분산성 검정
+library(agricolae) #install.packages("agricolae") : anova 사후검정(turkey검정)
+library(ggfortify) #install.packages("ggfortify") : 잔차분석 산점도 그릴때
+library(lmtest) #install.packages("lmtest") : 회귀결과 이분산성 테스트
+library(ggmosaic) #install.packages("ggmosaic") : 막대 그래프 그리기1
+library(gmodels) #install.packages(“gmodels”) : 막대 그래프 그리기2
+library(corrplot);library(readxl);library(foreign);library(plyr);library(knitr)
+library(lavaan);library(semPlot);library(summarytools);library(devtools);library(epmr)
+library(ggplot2);library(GGally);library(DescTools);library(nord);library(DT)
+library(fastDummies);library(sjPlot);library(plotly);library(highcharter);library(kableExtra)
+
+
+
+## Import Data
+
+# raw_data1 <- read.csv("Lt01.csv", header = T, fileEncoding = "euc-kr")
+# raw_data2 <- read.csv("Lt02.csv", header = T, fileEncoding = "euc-kr")
+# raw_data3 <- read.csv("Lt03.csv", header = T, fileEncoding = "euc-kr")
+# raw_data4 <- read.csv("Lt04.csv", header = T, fileEncoding = "euc-kr")
+# raw_data5 <- read.csv("Lt05.csv", header = T, fileEncoding = "euc-kr")
+# raw_data6 <- read.csv("Lt06.csv", header = T, fileEncoding = "euc-kr")
+raw_data7 <- read.csv("Lt07.csv", header = T, stringsAsFactors = F, fileEncoding = "euc-kr")
+raw_data8 <- read.csv("Lt08.csv", header = T, stringsAsFactors = F, fileEncoding = "euc-kr")
+data7 <- raw_data7
+data8 <- raw_data8
+
+
+## Data selection
+data7 <- data7 %>% 
+  select(pid,
+         w07edu,
+         w07gender1,
+         w07A002_age,
+         w07A036,
+         w07enu_type,
+         w07C152,
+         w07residence,
+         w07residence_,
+         w07G026,
+         w07G027,
+         w07G028,
+         w07G029,
+         w07G030,
+         w07G031,
+         w07hhnetassets,
+         w07region1,
+         w07region2,
+         w07region3)
+
+data8 <- data8 %>% 
+  select(pid,
+         w08edu,
+         w08gender1,
+         w08A002_age,
+         w08A036,
+         w08enu_type,
+         w08C152,
+         w08residence,
+         w08residence_,
+         w08G026,
+         w08G027,
+         w08G028,
+         w08G029,
+         w08G030,
+         w08G031,
+         w08hhnetassets,
+         w08region1,
+         w08region2,
+         w08region3,
+         w08marital,
+         w08present_ecotype,
+         w08present_labor)
+
+names(data7)
+names(data8)
+
+df <- merge(data7, data8, by = "pid")
+
+describe(df)
+describe(df$w08hhnetassets)
+
+## Add Derived Variables
+
+df$var_resi = df$w08residence - df$w07residence
+df$resi_change = df$w08residence - df$w07residence
+df$resi_change = ifelse(df$resi_change > 0, "상승",
+                        ifelse(df$resi_change<0, "하락", "유지"))
+df$var_relation = df$w08G029 - df$w07G029
+df$var_assets = df$w08hhnetassets - df$w08residence #가구순자산 - 주택가격 = 순여유자산 총액
+df <- df %>% 
+  mutate(sati8 = (w08G026 + w08G027 + w08G028 + w08G030)/4) # 만족도 평균
+df <- df %>% 
+  mutate(sati7 = (w07G026 + w07G027 + w07G028 + w07G030)/4)
+df$sati_change = df$sati8 - df$sati7
+df$sati_change = ifelse(df$sati_change > 0, "향상",
+                        ifelse(df$sati_change<0, "감소", "변화없음"))
+round(prop.table(table(df$w08A002_age))*100,1) # 연령별 비율
+hist(df$w08A002_age)
+df$age_range= ifelse(df$w08A002_age >= 80, "80+",
+                     ifelse(df$w08A002_age >= 65, "65+",
+                            ifelse(df$w08A002_age >= 46, "50+", "45+")))
+
+df$w08gender1 <- ifelse(df$w08gender1 ==1, 'male', 'female') # 성별 항목 이름 부여
+# table(is.na(df$w08gender1))
+
+
+
+## Data Selection
+
+df <- df %>% 
+  select('pid', 'w08gender1', 'w08A002_age', 'w07enu_type','w07A036',
+         'w08G026', 'w08G027', 'w08G028', 'w08G029', 'w08G030',
+         'var_assets', 'var_relation','var_resi', 'sati_change', 'resi_change', 'age_range')
+
+
+## Data rename
+
+df <- rename(df,
+              gender = w08gender1,             # 성별
+              age = w08A002_age,               # 연령
+              housetype = w07enu_type,         # 주거종류 or 거주형태
+              #ownership07 = w07F001,          # 주택소유여부
+              heads = w07A036,                 # 가구주 여부
+              sati1_health = w08G026,           # 건강상태
+              sati2_eco = w08G027,             # 경제상태
+              sati3_relation_wife = w08G028,   # 배우자와의 관계
+              sati4_relation_child = w08G029,  # 자녀와의 관계
+              sati5_life = w08G030             # 전반적인 삶의 질
+)
+
+
+str(df)
+backup_data <- df #백업용
+
+
+## descriptive statistics
+df <- na.omit(df)
+df$var_resi = log(df$var_resi + 1)
+summary(df)
+describe(df)
+
+## type conversion
+str(df)
+attach(df)
+df$gender <- as.factor(df$gender)
+df$heads <- as.factor(df$heads)
+df$age_range = as.factor(df$age_range)
+# df$pid <- as.character(pid)
+# df$resi <- as.character(df$resi)
+# df$sati <- as.factor(df$sati)
+# table(is.na(df))
+
+
+## EDA
+dim(df)
+names(df)
+summary(df)
+describe(df)
+
+
+## 그래프 작성
+
+################################################################
+########주택가격이 변화한 집단 중에서, 만족도 변화비율(1)#######
+################################################################
+df2 <- df |> 
+  count(resi_change, sati_change, age_range, sort = T) |> 
+  na.omit()
+names(df2)
+
+satigood <- subset(df2, sati_change == "향상")
+satisame <- subset(df2, sati_change == "변화없음")
+satibad <- subset(df2, sati_change == "감소")
+
+satigood
+
+satigood <- ddply(satigood, "age_range", transform, percent_n = n/sum(n)*100)
+
+
+### 주택가격이 변한 집단/만족도 변화
+resiup <- subset(df2, resi_change == "상승")
+resisame <- subset(df2, resi_change == "유지")
+residown <- subset(df2, resi_change == "하락")
+
+
+
+# 분포도 히스토그램
+ggplot(satigood, aes(x=age_range, y=percent_n, fill = resi_change)) + 
+  geom_col(show.legend = F) + scale_fill_brewer(palette = "Oranges") + 
+  labs(x= "만족도변화", y=NULL, fill="주택가격변화") + theme_minimal() 
+
+
+
+## 
+# barplot(data, col=rainbow(6), legend=
+#           c('Upgroup', 'Downgroup'),
+#         xlim = c(0, ncol(tab)+2, xlab="--", ylab="Number of ",
+#                  args.legend=list(x=ncol(tab)+2),
+#                                   y=max(colSums(tab)),bty="n"))
+str(price_up)
+ggplot(data=price_up, aes(x=houseprice, y=sati1)) + geom_point()
+ggplot(data=price_up, aes(x=houseprice, y=sati2)) + geom_point()
+ggplot(data=price_up, aes(x=houseprice, y=sati3)) + geom_point()
+ggplot(data=price_up, aes(x=houseprice, y=sati4)) + geom_point()
+ggplot(data=price_up, aes(x=houseprice, y=sati5)) + geom_point()
+
+
+
+# 집단 분할하고, 통계량 구하기
+price_up |> group_by(pricegroup) |> summarise(mean = mean(houseprice))
+
+
+
+
+# 6) 상관분석 및 시각화
+# 6-1) 상관분석
+b_continues <- data |> select(houseprice, sati1, sati2, sati3, sati4, sati5)
+cor <- cor(b_continues, use="complete.obs");cor
+
+# 6-2) 시각화
+cor(b_continues) |> corrplot()
+cor(b_continues) |> corrplot(method='number')
+cor(b_continues) |> corrplot(type='lower', method = 'ellipse')
+
+
+df_up = price_up %>% filter(houseprice == "upgroup")
+gmodel <- lm(sati1 ~ 1+houseprice + housetype, data = df_up)
+plot(sati1 ~ houseprice, data = df_up)
+abline(gmodel, col='red')
+summary(gmodel)
+
+## 일반선형회귀모델 설정
+df_up = price_up %>% filter(houseprice == "upgroup")
+ols_model <- as.formula('sati1~+housetype+houseprice')
+ols_up <- lm(formula=ols_model,data=df_up)
+summary(ols_model)
+
+## 2023년 회귀분석 결과 정리
+# - sjplot 패키지의 tab_model 함수 사용
+# - 회귀분석 결과를 MS word(doc)파일로 저장
+
+tab_model(ols_2023,title = '거주주택 가격이 삶의 만족도에 미치는 영향',
+          show.std=TRUE,#표준화회귀계수
+          digits = 1, digits.p = 3,file = "reg_2023.doc")
+
+
+
+## 표준화 회귀계수 비교
+plot_model(ols_2023,title = '표준화 회귀계수',type='std') + theme_sjplot()
+
+
+## 회귀분석 잔차 검정
+# - Residuals vs Fitted: X축 예측값, Y축 잔차
+# - Normal Q-Q: 잔차의 정규분포검정
+# - Scale-Location: X 축 예측값, Y축에 표준화 잔차
+# - Residuals vs Leverage: X 축에 레버리지Leverage, Y 축에 표준화 잔차
+# - Cook's distance
+# - Cook's distance and leverage
+
+
+par(mfrow=c(3,2),mar=c(2,2,2,2))
+plot(ols_2023,which=c(1:6))
+
+
+
+# 다수의 모델 비교
+# - 2023년 모델과 2022년 모델을 하나의 테이블에 정리
+# - 정리표를 MS Word 파일로 저장
+
+df_2022 = seoul_apt %>% filter(년=='2022년' & 월=='1월') %>%
+  mutate(건물연령=2022-건축년도) %>%
+  dummy_cols(.,select_columns = "자치구이름",remove_first_dummy = TRUE)
+
+ols_2022 <- lm(formula=ols_model,data=df_2022)
+
+tab_model(
+  ols_2023,ols_2022,
+  show.aic = TRUE,
+  dv.labels = c("2023년", "2022년"),
+  string.pred = "Coeffcient",
+  string.p = "P-Value",
+  show.ci = FALSE,
+  p.style = "stars",
+  p.threshold = c(0.1, 0.05, 0.01),
+  title = '2023,2022년 서울시 아파트 거래_회귀분석 비교',show.std=TRUE,
+  digits = 1, digits.p = 3,file = "reg_2023_2022.doc")
+
+
+
+
+
+
+
+
+## 안쓰는 코드
+# data <- data |> mutate(pricegroup = ifelse(houseprice > 0, "upgroup", 
+#                                            ifelse(houseprice < 0, "downgroup", "NA")))
+data <- data |> mutate(pricegroup = ifelse(houseprice > 0, "upgroup", "downgroup"))
+data <- data |> select('pid', 'ownership', 'housetype', 'houseprice', 'pricegroup', 'sati1', 'sati2', 'sati3', 'sati4', 'sati5')
+
+price_up <- data |> filter(pricegroup == "upgroup");price_up
+price_down <- data |> filter(pricegroup == "downgroup");price_down
+
+plot(price_up$sati1~price_up$houseprice, pch=1)
+plot(price_up$sati2~price_up$houseprice, pch=1)
+plot(price_up$sati3~price_up$houseprice, pch=1)
+plot(price_up$sati4~price_up$houseprice, pch=1)
+
+plot(price_down$sati1~price_down$houseprice, pch=1)
+plot(price_down$sati2~price_down$houseprice, pch=1)
+plot(price_down$sati3~price_down$houseprice, pch=1)
+plot(price_down$sati4~price_down$houseprice, pch=1)
+
+
+qplot(price_up$houseprice, price_up$sati1, cor="red", geom = "line", main="Price with sati")
+
+qplot(price_down$houseprice, price_down$sati1, cor="red", geom = "line", main="Price with sati")
+
+plot(density(price_up$houseprice))
+
+cor(price_up$houseprice, price_up$sati1)
+cor(price_up$houseprice, price_up$sati2)
+cor(price_up$houseprice, price_up$sati3)
+cor(price_up$houseprice, price_up$sati4)
+
+
+cor(price_down$houseprice, price_down$sati1)
+cor(price_down$houseprice, price_down$sati2)
+cor(price_down$houseprice, price_down$sati3)
+cor(price_down$houseprice, price_down$sati4)
+
+cor.test(price_down$houseprice, price_down$sati1)
+cor.test(price_down$houseprice, price_down$sati2)
+cor.test(price_down$houseprice, price_down$sati3)
+cor.test(price_down$houseprice, price_down$sati4)
