@@ -1,7 +1,8 @@
 ## Set working directory and Loading dataset
 rm(list=ls())
-setwd("E:/000_22년/01_박사과정/2_고령층의 거주주택 가격 변화가 가족관계와 삶의 만족도에 미치는 영향/0_R_Code(230302)")
+setwd("C:/Users/gtx1060/Desktop/0_R_Code(230302)")
 getwd()
+options(warn=-1) # Ignore less important warning messages
 graphics.off()
 # cat('\014')
 list.files()
@@ -25,9 +26,10 @@ library(lmtest) #install.packages("lmtest") : 회귀결과 이분산성 테스�
 library(ggmosaic) #install.packages("ggmosaic") : 막대 그래프 그리기1
 library(gmodels) #install.packages(“gmodels”) : 막대 그래프 그리기2
 library(corrplot);library(readxl);library(foreign);library(plyr);library(knitr)
-library(lavaan);library(semPlot);library(summarytools);library(devtools);library(epmr)
-library(ggplot2);library(GGally);library(DescTools);library(nord);library(DT)
-library(fastDummies);library(sjPlot);library(plotly);library(highcharter);library(kableExtra)
+library(lavaan);library(semPlot);library(summarytools);library(devtools);
+library(epmr);library(ggplot2);library(GGally);library(DescTools);library(nord);
+library(DT);library(fastDummies);library(sjPlot);library(plotly);
+library(highcharter);library(kableExtra);library(stargazer)
 
 
 ## Import Data
@@ -110,12 +112,10 @@ df <- df |>
   mutate(sati7 = (w07G026 + w07G027 + w07G028 + w07G030)/4)
 df$sati_change_mean = df$sati8 - df$sati7
 df$sati_change_mean = ifelse(df$sati_change_mean > 0, "향상",
-                        ifelse(df$sati_change_mean<0, "감소", "변화없음"))
+                             ifelse(df$sati_change_mean<0, "감소", "변화없음"))
 df$sati1_health_change = df$w08G026 - df$w07G026
 df$sati1_health_change = ifelse(df$sati1_health_change > 0, "향상",
-                             ifelse(df$sati1_health_change<0, "감소", "변화없음"))
-
-
+                                ifelse(df$sati1_health_change<0, "감소", "변화없음"))
 
 
 
@@ -135,7 +135,8 @@ df$w08gender1 <- ifelse(df$w08gender1 ==1, 'male', 'female') # 성별 항목 이
 df <- df |> 
   select('pid', 'w08gender1', 'w08A002_age', 'w07enu_type','w07A036',
          'w08G026', 'w08G027', 'w08G028', 'w08G029', 'w08G030',
-         'var_assets', 'var_relation','var_resi', 'sati_change', 'resi_change', 'age_range')
+         'var_assets', 'var_relation','var_resi', 'sati_change_mean',
+         'resi_change', 'age_range', 'sati1_health_change')
 
 
 ## Data rename
@@ -166,7 +167,6 @@ describe(df)
 
 ## type conversion
 str(df)
-attach(df)
 df$gender <- as.factor(df$gender)
 df$heads <- as.factor(df$heads)
 df$age_range = as.factor(df$age_range)
@@ -194,28 +194,39 @@ describe(df)
 df2 <- df
 names(df2)
 
-satigood <- subset(df2, sati_change == "향상")
-satisame <- subset(df2, sati_change == "변화없음")
-satibad <- subset(df2, sati_change == "감소")
+sati_mean_good <- subset(df2, sati_change_mean == "향상")
+sati_mean_same <- subset(df2, sati_change_mean == "변화없음")
+sati_mean_bad <- subset(df2, sati_change_mean == "감소")
 
-some(satigood, 5)
+sati1_health_change_good <- subset(df2, sati1_health_change == "향상")
+sati1_health_change_same <- subset(df2, sati1_health_change == "변화없음")
+sati1_health_change_bad <- subset(df2, sati1_health_change == "감소")
 
-satigood <- ddply(satigood, "age_range", transform, percent_n = n/sum(n)*100)
+some(sati_mean_good, 5)
+some(sati1_health_change_good, 5)
 
+# 퍼센트로 어떻게 바꿔야 하는지를 잘 모르겠음
+# sati1_health_change_good <- ddply(sati1_health_change_good, "age_range", transform, percent_n = n/sum(n)*100)
+# sati1_health_change_good$percent_n
 
 ### 주택가격이 변한 집단/만족도 변화
-resiup <- subset(df2, resi_change == "상승")
-resisame <- subset(df2, resi_change == "유지")
-residown <- subset(df2, resi_change == "하락")
+resiup <- subset(df2, sati_change_mean == "상승")
+resisame <- subset(df2, sati_change_mean == "유지")
+residown <- subset(df2, sati_change_mean == "하락")
 
 
 
 ## x = 주택가격, y = 삶의 만족도
-ggplot(df2, aes(x=factor(resi_change), fill=sati_change)) +
+ggplot(df2, aes(x=factor(resi_change), fill=sati1_health_change))
++
+  geom_bar(position="fill", width = 0.6) +
+  labs(x='주택가격', fill="평균 만족도 변화")
+
+ggplot(df2, aes(x=factor(resi_change), fill=sati_change_mean)) +
   geom_bar(position="fill", width = 0.6) +
   labs(fill="평균 만족도 변화")
 
-ggplot(df2, aes(x = factor(resi_change), y = var_relation, fill = sati_change)) +
+ggplot(df2, aes(x = factor(resi_change), y = age_range, fill = sati1_health_change)) +
   geom_col(position = "fill", width = 0.6)
 
 #####
@@ -265,7 +276,7 @@ ggplot(satigood, aes(x=resi_change, y=n, fill = age_range)) +
   labs(x= "만족도변화", y=NULL, fill="주택가격변화") + theme_minimal() 
 
 # age_range
- <- ddply(satigood, "age_range", transform, percent_n = n/sum(n)*100)
+<- ddply(satigood, "age_range", transform, percent_n = n/sum(n)*100)
 
 ggplot(df2, aes(x=var_resi, y=sati_change, fill = n)) + geom_col(position = "dodge")+
   scale_fill_brewer(palette = "Oranges") + labs(x= "주택가격변화", y=NULL, fill="만족도 변화") +
