@@ -25,11 +25,13 @@ library(ggfortify) #install.packages("ggfortify") : 잔차분석 산점도 그�
 library(lmtest) #install.packages("lmtest") : 회귀결과 이분산성 테스트
 library(ggmosaic) #install.packages("ggmosaic") : 막대 그래프 그리기1
 library(gmodels) #install.packages(“gmodels”) : 막대 그래프 그리기2
+library(DMwR) # 결측 값 처리를 지원하는 패키지
 library(corrplot);library(readxl);library(foreign);library(plyr);library(knitr)
 library(lavaan);library(semPlot);library(summarytools);library(devtools);
 library(epmr);library(ggplot2);library(GGally);library(DescTools);library(nord);
 library(DT);library(fastDummies);library(sjPlot);library(plotly);
-library(highcharter);library(kableExtra);library(stargazer);library(DMwR);
+library(highcharter);library(kableExtra);library(stargazer);
+
 
 
 ## Import Data
