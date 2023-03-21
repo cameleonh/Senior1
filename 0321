@@ -29,7 +29,7 @@ library(corrplot);library(readxl);library(foreign);library(plyr);library(knitr)
 library(lavaan);library(semPlot);library(summarytools);library(devtools);
 library(epmr);library(ggplot2);library(GGally);library(DescTools);library(nord);
 library(DT);library(fastDummies);library(sjPlot);library(plotly);
-library(highcharter);library(kableExtra);library(stargazer)
+library(highcharter);library(kableExtra);library(stargazer);library(DMwR);
 
 
 ## Import Data
