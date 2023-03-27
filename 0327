@@ -269,7 +269,7 @@ ggplot(df2, aes(x=resi_change, fill=sati_change_mean)) +
   scale_x_discrete(limits=c("하락", "유지","상승")) +
   scale_fill_brewer(palette = "Oranges")
 
-## data = 만족도1_건강, x = 주택가격, y = 연령
+## x = 주택가격, y = 연령
 ggplot(df2, aes(x=resi_change, fill=age_range)) +
   geom_bar(position="fill", width = 0.6) +
   labs(x='주택가격', fill="연령", reverse = TRUE) +
@@ -278,40 +278,14 @@ ggplot(df2, aes(x=resi_change, fill=age_range)) +
   scale_x_discrete(limits=c("하락", "유지","상승")) +
   scale_fill_brewer(palette = "Oranges")
 
-## data = 만족도1_건강, x = 주택가격, y = 성별
-ggplot(sati1_health_change_good, aes(x=resi_change, fill=gender)) +
-  geom_bar(position="fill", width = 0.6) +
-  labs(x='주택가격', fill="성별", reverse = TRUE) +
-  # scale_fill_manual(values = c("#9ecae1", "#4292c6", "#08519c")) +
-  theme_minimal(base_family = "AppleSDGothicNeo-ExtraBold", base_size = 13) +
-  scale_x_discrete(limits=c("하락", "유지","상승")) +
-  scale_fill_brewer(palette = "Oranges")
-
-## data = 만족도1_건강, x = 주택가격, y = 가구주 여부
-ggplot(sati1_health_change_good, aes(x=resi_change, fill=heads)) +
-  geom_bar(position="fill", width = 0.6) +
-  labs(x='주택가격', fill="가구주", reverse = TRUE) +
-  # scale_fill_manual(values = c("#9ecae1", "#4292c6", "#08519c")) +
-  theme(text=element_text(size=16,  family="Comic Sans MS")) +
-  scale_x_discrete(limits=c("하락", "유지","상승")) +
-  scale_fill_brewer(palette = "Oranges")
-
-## data = 만족도1_건강, x = 주택가격, y = 가구주 여부
-ggplot(sati1_health_change_good, aes(x=resi_change, fill=heads)) +
-  geom_bar(position="fill", width = 0.6) +
-  labs(x='주택가격', fill="가구주", reverse = TRUE) +
-  # scale_fill_manual(values = c("#9ecae1", "#4292c6", "#08519c")) +
-  theme(text=element_text(size=16,  family="Comic Sans MS")) +
-  scale_x_discrete(limits=c("하락", "유지","상승")) +
-  scale_fill_brewer(palette = "Oranges")
 
 ################################################################
-########(3)주택가격이 변화한 집단 중에서, 아내와의 관계 변화비율#####
+####(3)주택가격이 변화한 집단 중에서, 아내와의 관계 변화비율####
 ################################################################
 
 ## data = , x = 주택가격, y = 만족도2_경제상태
-ggplot(df2, aes(x=resi_change, fill=sati3_relationw_change)) +
-  geom_bar(position="fill", width = 0.6) +
+ggplot(df2, aes(x=resi_change, fill=factor(sati3_relationw_change))) + 
+  geom_bar(position="fill", width = 0.6) + 
   labs(x='주택가격', fill="만족도2_경제상태", reverse = TRUE) +
   # scale_fill_manual(values = c("#9ecae1", "#4292c6", "#08519c")) +
   theme(text=element_text(size=16,  family="Comic Sans MS")) +
