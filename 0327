@@ -10,7 +10,7 @@ list.files()
 ## Preparing
 
 #install package!!!
-#devtools::install_github("talbano/epmr")
+# devtools::install_github("talbano/epmr")
 
 library(tidyverse) #install.packages("tidyverse")
 library(readxl) #install.packages("readXL") : excel, csv 파일 열기
@@ -26,7 +26,7 @@ library(lmtest) #install.packages("lmtest") : 회귀결과 이분산성 테스�
 library(ggmosaic) #install.packages("ggmosaic") : 막대 그래프 그리기1
 library(gmodels) #install.packages(“gmodels”) : 막대 그래프 그리기2
 library(DMwR) # 결측 값 처리를 지원하는 패키지
-library(corrplot);library(readxl);library(foreign);library(plyr);library(knitr)
+library(corrplot);library(foreign);library(plyr);library(knitr)
 library(lavaan);library(semPlot);library(summarytools);library(devtools);
 library(epmr);library(ggplot2);library(GGally);library(DescTools);library(nord);
 library(DT);library(fastDummies);library(sjPlot);library(plotly);
@@ -128,11 +128,13 @@ df$sati5_life_change = df$w08G030 - df$w07G030
 round(prop.table(table(df$w08A002_age))*100,1) # 연령별 비율
 hist(df$w08A002_age)
 df$age_range = ifelse(df$w08A002_age >= 80, "80+",
-                     ifelse(df$w08A002_age >= 65, "65+",
-                            ifelse(df$w08A002_age >= 46, "50+", "45+")))
+                      ifelse(df$w08A002_age >= 65, "65+",
+                             ifelse(df$w08A002_age >= 46, "50+", "45+")))
 df$w07A036 <- ifelse(df$w07A036 ==1, 'head', 'non-head') # 가구주 이름 부여
 df$w08gender1 <- ifelse(df$w08gender1 ==1, 'male', 'female') # 성별 항목 이름 부여
 # table(is.na(df$w08gender1))
+str(df)
+
 
 
 ## Data Selection
@@ -146,18 +148,12 @@ df <- df |>
 
 
 ## Data rename
-df <- df |> rename(gender = w08gender1,
-             age = w08A002_age,
-             heads = w07A036
-             )
-
-
 df <- rename(df,
              gender = w08gender1,             # 성별
              age = w08A002_age,               # 연령
              housetype = w07enu_type,         # 주거종류 or 거주형태
-             #ownership07 = w07F001,          # 주택소유여부
              heads = w07A036,                 # 가구주 여부
+             #ownership07 = w07F001,          # 주택소유여부
              # sati1_health = w08G026,          # 건강상태
              # sati2_eco = w08G027,             # 경제상태
              # sati3_relation_wife = w08G028,   # 배우자와의 관계
@@ -169,7 +165,7 @@ df <- rename(df,
 str(df)
 backup_data <- df #백업용
 
-
+is.na(table(df$))
 ## descriptive statistics
 summary(df)
 df <- na.omit(df)
@@ -197,10 +193,12 @@ describe(df)
 ## 그래프 작성
 
 ################################################################
-########(1)주택가격이 변화한 집단 중에서, 건강상태 변화비율#######
+#######(1)주택가격이 변화한 집단 중에서, 건강상태 변화비율######
 ################################################################
 
 df2 <- df
+df2 <- na.omit(df2)
+
 names(df2)
 
 ggplot(df2, aes(x=resi_change, fill=heads)) +
@@ -212,25 +210,13 @@ ggplot(df2, aes(x=resi_change, fill=heads)) +
   scale_fill_brewer(palette = "Oranges")
 
 
-
-
-
-
-ggplot(df2, aes(x=factor(resi_change), fill=sati_change_mean)) + geom_bar()
-
+ggplot(df2, aes(x=resi_change, fill=sati_change_mean)) + geom_bar()
 
 
 ##  삶의만족도 평균이 변한 집단
 sati_mean_good <- subset(df2, sati_change_mean == "향상")
 sati_mean_same <- subset(df2, sati_change_mean == "변화없음")
 sati_mean_bad <- subset(df2, sati_change_mean == "감소")
-
-### 주택가격이 변한 집단
-resiup <- subset(df2, resi_change == "상승")
-resisame <- subset(df2, resi_change == "유지")
-residown <- subset(df2, resi_change == "하락")
-
-
 
 
 
@@ -239,8 +225,16 @@ residown <- subset(df2, resi_change == "하락")
 ########(2)주택가격이 변화한 집단 중에서, 경제상태 변화비율#####
 ################################################################
 
+### 주택가격이 변한 집단
+resiup <- subset(df2, resi_change == "상승")
+resisame <- subset(df2, resi_change == "유지")
+residown <- subset(df2, resi_change == "하락")
 
-ggplot(df2, aes(x=resi_change, fill=sati2_eco_change)) +
+df2$sati2_eco = ifelse(df2$sati2_eco >= 1, "향상",
+                       ifelse(df2$sati2_eco == 0, "변화없음",
+                              ifelse(df2$sati2_eco <= -1, "감소", "NA")))
+
+ggplot(df2, aes(x=resi_change, fill=sati2_eco)) +
   geom_bar(position="fill", width = 0.6) +
   labs(x='주택가격', fill="만족도2_자신의 경제상태", reverse = TRUE) +
   # scale_fill_manual(values = c("#9ecae1", "#4292c6", "#08519c")) +
@@ -266,7 +260,7 @@ some(sati1_health_change_good, 5)
 # df2 |> mutate(df2$resiup, sati_change_mean == "상승")
 
 
-## data = 만족도1_건강, x = 주택가격, y = 삶의 만족도
+## x = 주택가격, y = 삶의 만족도 평균
 ggplot(df2, aes(x=resi_change, fill=sati_change_mean)) +
   geom_bar(position="fill", width = 0.6) +
   labs(x='주택가격', fill="평균 만족도 변화", reverse = TRUE) +
@@ -274,7 +268,7 @@ ggplot(df2, aes(x=resi_change, fill=sati_change_mean)) +
   theme_minimal(base_family = "AppleSDGothicNeo-ExtraBold", base_size = 13) +
   scale_x_discrete(limits=c("하락", "유지","상승")) +
   scale_fill_brewer(palette = "Oranges")
-  
+
 ## data = 만족도1_건강, x = 주택가격, y = 연령
 ggplot(df2, aes(x=resi_change, fill=age_range)) +
   geom_bar(position="fill", width = 0.6) +
@@ -315,14 +309,8 @@ ggplot(sati1_health_change_good, aes(x=resi_change, fill=heads)) +
 ########(3)주택가격이 변화한 집단 중에서, 아내와의 관계 변화비율#####
 ################################################################
 
-df2$sati2_eco = ifelse(df2$sati2_eco >= 1, "향상",
-                      ifelse(df2$sati2_eco == 0, "변화없음",
-                             ifelse(df2$sati2_eco <= -1, "감소", "NA")))
-
-
-
 ## data = , x = 주택가격, y = 만족도2_경제상태
-ggplot(df2, aes(x=resi_change, fill=sati3_relationc_change)) +
+ggplot(df2, aes(x=resi_change, fill=sati3_relationw_change)) +
   geom_bar(position="fill", width = 0.6) +
   labs(x='주택가격', fill="만족도2_경제상태", reverse = TRUE) +
   # scale_fill_manual(values = c("#9ecae1", "#4292c6", "#08519c")) +
@@ -352,8 +340,8 @@ ggplot(df2, aes(x=resi_change, fill=sati2_eco)) +
 ################################################################
 
 df2$sati4_relation_wife = ifelse(df2$sati3_relation_wife >= 1, "향상",
-                                  ifelse(df2$sati3_relation_wife == 0, "변화없음",
-                                         ifelse(df2$sati3_relation_wife <= -1, "감소", "NA")))
+                                 ifelse(df2$sati3_relation_wife == 0, "변화없음",
+                                        ifelse(df2$sati3_relation_wife <= -1, "감소", "NA")))
 
 
 
@@ -371,8 +359,8 @@ ggplot(df2, aes(x=resi_change, fill=sati4_relationw_change)) +
 ################################################################
 
 df2$sati4_relation_child = ifelse(df2$sati4_relation_child >= 1, "향상",
-                       ifelse(df2$sati4_relation_child == 0, "변화없음",
-                              ifelse(df2$sati4_relation_child <= -1, "감소", "NA")))
+                                  ifelse(df2$sati4_relation_child == 0, "변화없음",
+                                         ifelse(df2$sati4_relation_child <= -1, "감소", "NA")))
 
 
 
@@ -391,8 +379,8 @@ ggplot(df2, aes(x=resi_change, fill=factor(sati5_life_change))) +
 ################################################################
 
 df2$sati5_life = ifelse(df2$sati5_life >= 1, "향상",
-                                  ifelse(df2$sati5_life == 0, "변화없음",
-                                         ifelse(df2$sati5_life <= -1, "감소", "NA")))
+                        ifelse(df2$sati5_life == 0, "변화없음",
+                               ifelse(df2$sati5_life <= -1, "감소", "NA")))
 
 
 
