@@ -12,6 +12,7 @@ list.files()
 #install package!!!
 # devtools::install_github("talbano/epmr")
 
+library(devtools)
 library(tidyverse) #install.packages("tidyverse")
 library(readxl) #install.packages("readXL") : excel, csv 파일 열기
 library(psych) #install.packages("psych") : kurtosi, skew
@@ -27,9 +28,10 @@ library(ggmosaic) #install.packages("ggmosaic") : 막대 그래프 그리기1
 library(gmodels) #install.packages(“gmodels”) : 막대 그래프 그리기2
 library(DMwR2) # 결측 값 처리를 지원하는 패키지
 library(patchwork) # ggplot 플롯 붙여서 그리기
+library(dagitty) # causal diagrams 그리기, install_github("jtextor/dagitty/r")
 library(ggbump) # 일반적인 선그래프와는 달리 랭킹간 변화추이 그리기
 library(corrplot);library(foreign);library(plyr);library(knitr)
-library(lavaan);library(semPlot);library(summarytools);library(devtools);
+library(lavaan);library(semPlot);library(summarytools);
 library(epmr);library(ggplot2);library(GGally);library(DescTools);library(nord);
 library(DT);library(fastDummies);library(sjPlot);library(plotly);
 library(highcharter);library(kableExtra);library(stargazer);
@@ -195,7 +197,7 @@ df$age_range = as.factor(df$age_range)
 # df$pid <- as.character(pid)
 # df$resi <- as.character(df$resi)
 # df$sati <- as.factor(df$sati)
-# table(is.na(df))
+# table(is.na(df$heads))
 
 
 ## EDA
@@ -215,7 +217,7 @@ df2 <- df
 df2 <- na.omit(df2)
 
 names(df2)
-df2 <- ddply(df2, )
+# df2 <- ddply(df2, )
 
 res1 <- ggplot(df2, aes(x=resi_change, fill=sati1_health_change)) +
   geom_bar(position=position_fill(reverse = TRUE), width = 0.6) +
@@ -283,6 +285,8 @@ res5 <- ggplot(df2, aes(x=resi_change, fill=sati5_life_change)) +
   scale_fill_brewer(palette = "Oranges")
 ggplotly(res5)
 
+
+#########################################################
 
 
 
