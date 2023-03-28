@@ -25,13 +25,12 @@ library(ggfortify) #install.packages("ggfortify") : 잔차분석 산점도 그�
 library(lmtest) #install.packages("lmtest") : 회귀결과 이분산성 테스트
 library(ggmosaic) #install.packages("ggmosaic") : 막대 그래프 그리기1
 library(gmodels) #install.packages(“gmodels”) : 막대 그래프 그리기2
-library(DMwR) # 결측 값 처리를 지원하는 패키지
+library(DMwR2) # 결측 값 처리를 지원하는 패키지
 library(corrplot);library(foreign);library(plyr);library(knitr)
 library(lavaan);library(semPlot);library(summarytools);library(devtools);
 library(epmr);library(ggplot2);library(GGally);library(DescTools);library(nord);
 library(DT);library(fastDummies);library(sjPlot);library(plotly);
-library(highcharter);library(kableExtra);library(stargazer);library(googledrive)
-
+library(highcharter);library(kableExtra);library(stargazer);
 
 
 
@@ -116,14 +115,26 @@ df <- df |>
 df$sati_change_mean = df$sati8 - df$sati7
 df$sati_change_mean = ifelse(df$sati_change_mean > 0, "향상",
                              ifelse(df$sati_change_mean<0, "감소", "변화없음"))
+
 df$sati1_health_change = df$w08G026 - df$w07G026
 df$sati1_health_change = ifelse(df$sati1_health_change > 0, "향상",
                                 ifelse(df$sati1_health_change<0, "감소", "변화없음"))
-df$sati2_eco_change = df$w08G027 - df$w07G027
-df$sati3_relationw_change = df$w08G028 - df$w07G028
-df$sati4_relationc_change = df$w08G029 - df$w07G029
-df$sati5_life_change = df$w08G030 - df$w07G030
 
+df$sati2_eco_change = df$w08G027 - df$w07G027
+df$sati2_eco_change = ifelse(df$sati2_eco_change > 0, "향상",
+                                ifelse(df$sati2_eco_change < 0, "감소", "변화없음"))
+
+df$sati3_relationw_change = df$w08G028 - df$w07G028
+df$sati3_relationw_change = ifelse(df$sati3_relationw_change > 0, "향상",
+                                ifelse(df$sati3_relationw_change < 0, "감소", "변화없음"))
+
+df$sati4_relationc_change = df$w08G029 - df$w07G029
+df$sati4_relationc_change = ifelse(df$sati4_relationc_change > 0, "향상",
+                                ifelse(df$sati4_relationc_change < 0, "감소", "변화없음"))
+
+df$sati5_life_change = df$w08G030 - df$w07G030
+df$sati5_life_change = ifelse(df$sati5_life_change > 0, "향상",
+                                ifelse(df$sati5_life_change < 0, "감소", "변화없음"))
 
 
 round(prop.table(table(df$w08A002_age))*100,1) # 연령별 비율
@@ -166,10 +177,10 @@ df <- rename(df,
 str(df)
 backup_data <- df #백업용
 
-is.na(table(df$))
+# is.na(table(df))
 ## descriptive statistics
 summary(df)
-df <- na.omit(df)
+# df <- na.omit(df)
 df$var_resi = log(df$var_resi + 1)
 describe(df)
 
@@ -201,17 +212,19 @@ df2 <- df
 df2 <- na.omit(df2)
 
 names(df2)
+df2 <- ddply(df2, )
 
-ggplot(df2, aes(x=resi_change, fill=heads)) +
-  geom_bar(position="fill", width = 0.6) +
+res1 <- ggplot(df2, aes(x=resi_change, fill=sati1_health_change)) +
+  geom_bar(position=position_fill(reverse = TRUE), width = 0.6) +
+  # scale_y_reverse() +
   labs(x='주택가격', fill="만족도1_자신의 건강상태", reverse = TRUE) +
+  scale_x_discrete(limits=c("하락", "유지","상승")) +
   # scale_fill_manual(values = c("#9ecae1", "#4292c6", "#08519c")) +
   theme(text=element_text(size=16,  family="Comic Sans MS")) +
-  scale_x_discrete(limits=c("하락", "유지","상승")) +
-  scale_fill_brewer(palette = "Oranges")
+  scale_fill_brewer(palette = "Oranges") +
+  geom_text(aes(y=label_y, label=Weight), vjust=1.5, colour=”white”);ggplotly(res1)
+# ggsave("주택가격 변화 집단 중 만족도(건강) 변화율.png")
 
-
-ggplot(df2, aes(x=resi_change, fill=sati_change_mean)) + geom_bar()
 
 
 ##  삶의만족도 평균이 변한 집단
@@ -371,8 +384,12 @@ ggplot(df2, aes(x=resi_change, fill=factor(sati5_life))) +
 
 
 
+################################################################
+########(6)주택가격이 변화한 집단 중에서, 전반적인 평균 삶의 만족도 변화비율#####
+################################################################
 
 
+ggplot(df2, aes(x=resi_change, fill=sati_change_mean)) + geom_bar()
 
 
 
