@@ -26,6 +26,7 @@ library(lmtest) #install.packages("lmtest") : 회귀결과 이분산성 테스�
 library(ggmosaic) #install.packages("ggmosaic") : 막대 그래프 그리기1
 library(gmodels) #install.packages(“gmodels”) : 막대 그래프 그리기2
 library(DMwR) # 결측 값 처리를 지원하는 패키지
+library(gganimate)
 library(corrplot);library(foreign);library(plyr);library(knitr)
 library(lavaan);library(semPlot);library(summarytools);library(devtools);
 library(epmr);library(ggplot2);library(GGally);library(DescTools);library(nord);
@@ -168,7 +169,7 @@ backup_data <- df #백업용
 is.na(table(df$))
 ## descriptive statistics
 summary(df)
-df <- na.omit(df)
+# df <- na.omit(df)
 df$var_resi = log(df$var_resi + 1)
 describe(df)
 
@@ -198,19 +199,22 @@ describe(df)
 
 df2 <- df
 df2 <- na.omit(df2)
-
+table(is.na(df2$resi_change))
 names(df2)
 
-ggplot(df2, aes(x=resi_change, fill=heads)) +
-  geom_bar(position="fill", width = 0.6) +
-  labs(x='주택가격', fill="만족도1_자신의 건강상태", reverse = TRUE) +
+res1 <- ggplot(df2, aes(x=resi_change, fill=sati1_health_change)) +
+  geom_bar(position=position_fill(reverse = TRUE), width = 0.6) +
   # scale_fill_manual(values = c("#9ecae1", "#4292c6", "#08519c")) +
   theme(text=element_text(size=16,  family="Comic Sans MS")) +
-  scale_x_discrete(limits=c("하락", "유지","상승")) +
-  scale_fill_brewer(palette = "Oranges")
+  scale_fill_brewer(palette = "Oranges") +  
+  # scale_y_reverse() +
+  scale_x_discrete(limits=c("하락", "유지","상승"))
+  # labs(color = 'resi_change') +
+  # ggsave("주택가격 변화 집단 중 만족도(건강) 변화율.png")
+
+ggplotly(res1)
 
 
-ggplot(df2, aes(x=resi_change, fill=sati_change_mean)) + geom_bar()
 
 
 ##  삶의만족도 평균이 변한 집단
