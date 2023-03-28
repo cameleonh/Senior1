@@ -225,11 +225,72 @@ res1 <- ggplot(df2, aes(x=resi_change, fill=sati1_health_change)) +
          # size = guide_legend(title = df2$sati1_health_change)) +
   scale_x_discrete(limits=c("하락", "유지","상승")) +
   # scale_fill_manual(values = c("#9ecae1", "#4292c6", "#08519c")) +
-  # geom_text(aes(y=sati1_health_change, label=resi_change), vjust=1.5, colour=”white”) +
+  # geom_text(aes(y=sati1_health_change, label=resi_change), vjust=1.5, colour=”white”)) +
   theme(text=element_text(size=16,  family="Comic Sans MS")) +
   scale_fill_brewer(palette = "Oranges")
 ggplotly(res1)
 # ggsave("주택가격 변화 집단 중 만족도(건강) 변화율.png")
+
+res2 <- ggplot(df2, aes(x=resi_change, fill=sati2_eco_change)) +
+  geom_bar(position=position_fill(reverse = TRUE), width = 0.6) +
+  # scale_y_reverse() +
+  # labs(x='주택가격', fill="만족도1_자신의 건강상태", reverse = FALSE) +
+  # guides(color = guide_colorbar(title = df2$sati1_health_change, reverse = TRUE),
+  # size = guide_legend(title = df2$sati1_health_change)) +
+  scale_x_discrete(limits=c("하락", "유지","상승")) +
+  # scale_fill_manual(values = c("#9ecae1", "#4292c6", "#08519c")) +
+  # geom_text(aes(y=sati1_health_change, label=resi_change), vjust=1.5, colour=”white”)) +
+  theme(text=element_text(size=16,  family="Comic Sans MS")) +
+  scale_fill_brewer(palette = "Oranges")
+ggplotly(res2)
+
+res3 <- ggplot(df2, aes(x=resi_change, fill=sati3_relationw_change)) +
+  geom_bar(position=position_fill(reverse = TRUE), width = 0.6) +
+  # scale_y_reverse() +
+  # labs(x='주택가격', fill="만족도1_자신의 건강상태", reverse = FALSE) +
+  # guides(color = guide_colorbar(title = df2$sati1_health_change, reverse = TRUE),
+  # size = guide_legend(title = df2$sati1_health_change)) +
+  scale_x_discrete(limits=c("하락", "유지","상승")) +
+  # scale_fill_manual(values = c("#9ecae1", "#4292c6", "#08519c")) +
+  # geom_text(aes(y=sati1_health_change, label=resi_change), vjust=1.5, colour=”white”)) +
+  theme(text=element_text(size=16,  family="Comic Sans MS")) +
+  scale_fill_brewer(palette = "Oranges")
+ggplotly(res3)
+
+res4 <- ggplot(df2, aes(x=resi_change, fill=sati4_relationc_change)) +
+  geom_bar(position=position_fill(reverse = TRUE), width = 0.6) +
+  # scale_y_reverse() +
+  # labs(x='주택가격', fill="만족도1_자신의 건강상태", reverse = FALSE) +
+  # guides(color = guide_colorbar(title = df2$sati1_health_change, reverse = TRUE),
+  # size = guide_legend(title = df2$sati1_health_change)) +
+  scale_x_discrete(limits=c("하락", "유지","상승")) +
+  # scale_fill_manual(values = c("#9ecae1", "#4292c6", "#08519c")) +
+  # geom_text(aes(y=sati1_health_change, label=resi_change), vjust=1.5, colour=”white”)) +
+  theme(text=element_text(size=16,  family="Comic Sans MS")) +
+  scale_fill_brewer(palette = "Oranges")
+ggplotly(res4)
+
+res5 <- ggplot(df2, aes(x=resi_change, fill=sati5_life_change)) +
+  geom_bar(position=position_fill(reverse = TRUE), width = 0.6) +
+  # scale_y_reverse() +
+  # labs(x='주택가격', fill="만족도1_자신의 건강상태", reverse = FALSE) +
+  # guides(color = guide_colorbar(title = df2$sati1_health_change, reverse = TRUE),
+  # size = guide_legend(title = df2$sati1_health_change)) +
+  scale_x_discrete(limits=c("하락", "유지","상승")) +
+  # scale_fill_manual(values = c("#9ecae1", "#4292c6", "#08519c")) +
+  # geom_text(aes(y=sati1_health_change, label=resi_change), vjust=1.5, colour=”white”)) +
+  theme(text=element_text(size=16,  family="Comic Sans MS")) +
+  scale_fill_brewer(palette = "Oranges")
+ggplotly(res5)
+
+
+
+
+
+
+
+
+
 
 
 
