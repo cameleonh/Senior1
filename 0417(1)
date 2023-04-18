@@ -1,0 +1,161 @@
+## Set working directory and Loading dataset
+# dev.off() # pallet reset
+rm(list=ls())
+setwd("C:/Users/gtx1060/Desktop/0_R_Code(230302)")
+getwd()
+options(warn=-1) # Ignore less important warning messages
+graphics.off()
+# cat('\014')
+list.files()
+
+## Preparing
+
+#install package!!!
+# devtools::install_github("talbano/epmr")
+
+library(devtools)
+library(tidyverse) #install.packages("tidyverse")
+library(lessR)
+library(readxl) #install.packages("readXL") : excel, csv 파일 열기
+library(psych) #install.packages("psych") : kurtosi, skew
+library(descr) #install.packages("descr") : freq(빈도)
+library(car) #install.packages("car") :다중공선성테스트, vif, ncvtest
+library(outreg) #install.packages("outreg") : model1+model2+model3
+library(lm.beta) #install.packages("lm.beta") : 표준화계수
+library(lawstat) #install.packages("lawstat") : 등분산성 검정
+library(agricolae) #install.packages("agricolae") : anova 사후검정(turkey검정)
+library(ggfortify) #install.packages("ggfortify") : 잔차분석 산점도 그릴때
+library(lmtest) #install.packages("lmtest") : 회귀결과 이분산성 테스트
+library(ggmosaic) #install.packages("ggmosaic") : 막대 그래프 그리기1
+library(gmodels) #install.packages(“gmodels”) : 막대 그래프 그리기2
+library(DMwR2) # 결측 값 처리를 지원하는 패키지
+library(patchwork) # ggplot 플롯 붙여서 그리기
+library(dagitty) # causal diagrams 그리기, install_github("jtextor/dagitty/r")
+library(ggbump) # 일반적인 선그래프와는 달리 랭킹간 변화추이 그리기
+library(DiagrammeR); #경로모형 그리기,  GraphViz와 Mermaid를 묶어서 연동해 놓은 패키지
+library(gtsummary)
+library(corrplot);library(foreign);library(plyr);library(knitr)
+library(lavaan);library(semPlot);library(summarytools);
+library(epmr);library(ggplot2);library(GGally);library(DescTools);library(nord);
+library(DT);library(fastDummies);library(sjPlot);library(plotly);
+library(highcharter);library(kableExtra);library(stargazer);library(RColorBrewer);
+library(diagram);
+
+
+# 연구모형 그리기
+
+mermaid("
+graph LR
+    classDef style_main_node fill:orange,stroke:#333,stroke-width:0px;
+    classDef style_sub_node fill:lightgray,stroke:#333,stroke-width:0px;
+    
+A(주택자산 가격 변화)-->B(만남빈도, 연락빈도, 금전적 지원)
+B-->C
+A-->C(자녀와의 관계만족도)
+
+    class A,B,D style_sub_node;
+    class C style_main_node;
+")
+
+
+
+## Import Data
+
+# raw_data1 <- read.csv("Lt01.csv", header = T, fileEncoding = "euc-kr")
+# raw_data2 <- read.csv("Lt02.csv", header = T, fileEncoding = "euc-kr")
+# raw_data3 <- read.csv("Lt03.csv", header = T, fileEncoding = "euc-kr")
+# raw_data4 <- read.csv("Lt04.csv", header = T, fileEncoding = "euc-kr")
+# raw_data5 <- read.csv("Lt05.csv", header = T, fileEncoding = "euc-kr")
+# raw_data6 <- read.csv("Lt06.csv", header = T, fileEncoding = "euc-kr")
+raw_data7 <- read.csv("w07.csv", header = T, stringsAsFactors = F, fileEncoding = "euc-kr")
+raw_data8 <- read.csv("w08.csv", header = T, stringsAsFactors = F, fileEncoding = "euc-kr")
+data7 <- raw_data7
+data8 <- raw_data8
+
+## Data selection
+data8 <-  data8 |> 
+  select(pid,
+         w08gender1,
+         w08A002_age,
+         w08marital,   #결혼상태 1:혼인 중
+         w08G026,      #건강상태
+         w08Ba003,     #현재 생존자녀 수
+         w08Ba008_01,  #1번째 자녀 나이
+         w08Ba018_01,  #1번째 자녀와의 근접성, 1:30분 이내, 2:1시간이내, 3:2시간 이내
+         w08Ba069,     #손자녀 돌봄여부(10세 이전 양육)
+         w08E147,      #가구 총소득
+         w08F234,      #개인총자산
+         w08G029,      #자녀와의 관계만족도
+)
+
+
+
+# data8 <- data8 |> 
+#   select(pid,
+#          w08edu,
+#          w08gender1,
+#          w08A002_age,
+#          w08E201,
+#          w08residence,    #주택 가격
+#          w08A036,         #가구주 여부
+#          w08f013_n,       #부채
+#          w08Ba003,        #현재 생존 자녀수
+#          w08region1,      #사는 지역
+#          w07hhsize,       #가구원 수
+#          w08enu_type,     #거주형태(1. 일반주택/ 2. 아파트)
+#          w08region1,      #거주지역(11 서울, 23 인천, 31 경기)           
+#          w08pinc)         #지난해 개인총소득(근로총소득+자산총소득+공적이전총소득+사적이전총소득(transferfrom) +개인연금소득+ 기타소득)            
+
+# df <- merge(data7, data8, by = "pid")
+
+## Data rename
+df <- rename(data8,
+             gender = w08gender1,             # 성별
+             age = w08A002_age,               # 연령
+             marriage = w08marital,           # 결혼여부
+             health = w08G026,
+             child_num = w08Ba003,
+             child_age = w08Ba008_01,
+             distance = w08Ba018_01,
+             grandchild_care = w08Ba069,
+             income = w08E147,
+             assets = w08F234,
+             sati = w08G029
+)
+
+## Add Derived Variables
+##가구원 수 변화, 주거이동(없는 가구) 추가해야 함
+# df$var_resi = df$w08residence - df$w07residence         #주택가격 차분(변동)
+# df$resi_change = df$w08residence - df$w07residence      #주택가격을 factor로 변경
+# df$var_consumption = df$w08E201 - df$w07E201            #소비액 차분(변동)
+# df$consumption = df$w08E201 - df$w07E201                #소비액 차분을 factor로 변경
+# df$consumption_f = ifelse(df$consumption > 0, "소비증가",
+#                           ifelse(df$consumption<0, "소비하락", "소비변동없음"))
+# df$resi_change_f = ifelse(df$resi_change > 0, "상승",
+#                           ifelse(df$resi_change<0, "하락", "유지"))
+# df$heads = ifelse(df$heads == 1, "heads", "Non-heads")
+df$age = ifelse(df$age >= 80, "80+",
+                ifelse(df$age >= 65, "65+",
+                       ifelse(df$age >= 46, "46+", "45+")))
+df$age = as.factor(df$age)
+
+hist(df$child_age)
+df$child_age = ifelse(df$child_age >= 65, "65+",
+                      ifelse(df$child_age >= 45, "45+",
+                             ifelse(df$child_age >= 30, "30+", "10+")))
+df$child_age = as.factor(df$child_age)
+
+
+
+# T.test
+t.test(sati ~ child_age, data=subset(df, Segment=="Travelers"))
+
+
+
+################################################################
+#####(1-1)   #####
+################################################################
+df1 <- df
+df1_oldage <- df1 |> filter(heads == 'heads' & age != '46+' & consumption == '소비증가')
+df1_youngage <- df1 |> filter(heads == 'heads' & age == '46+' & consumption == '소비증가')
+
