@@ -222,74 +222,277 @@ hist(df$age)
 
 ## 그래프 작성
 
-
 ################################################################
-########주택가격이 변화한 집단 중에서, 만족도 변화비율(1)#######
+#######(1)주택가격이 변화한 집단 중에서, 건강상태 변화비율######
 ################################################################
 
-# df |> count(resi_change, sati_change, age_range, sort = T)
-df |> 
-  count(resi_change, sati_change_mean, age_range, sort = T)
+df2 <- df
+df2 <- na.omit(df2)
+
 names(df2)
+# df2 <- ddply(df2, )
 
-satigood <- subset(df, sati_change == "향상")
-satisame <- subset(df, sati_change == "변화없음")
-satibad <- subset(df, sati_change == "감소")
+res1 <- ggplot(df2, aes(x=resi_change, fill=sati1_health_change)) +
+  geom_bar(position=position_fill(reverse = TRUE), width = 0.6) +
+  # scale_y_reverse() +
+  # labs(x='주택가격', fill="만족도1_자신의 건강상태", reverse = FALSE) +
+  # guides(color = guide_colorbar(title = df2$sati1_health_change, reverse = TRUE),
+  # size = guide_legend(title = df2$sati1_health_change)) +
+  scale_x_discrete(limits=c("하락", "유지","상승")) +
+  # scale_fill_manual(values = c("#9ecae1", "#4292c6", "#08519c")) +
+  # geom_text(aes(y=sati1_health_change, label=resi_change), vjust=1.5, colour=”white”)) +
+  theme(text=element_text(size=16,  family="Comic Sans MS")) +
+  scale_fill_brewer(palette = "Oranges") +
+  stat_count(geom = "text",
+             aes(label = stat(count)),
+             position=position_fill(vjust=0.5), colour="white")
+ggplotly(res1)
+# ggsave("주택가격 변화 집단 중 만족도(건강) 변화율.png")
 
-some(satigood, 5)
+res2 <- ggplot(df2, aes(x=resi_change, fill=sati2_eco_change)) +
+  geom_bar(position=position_fill(reverse = TRUE), width = 0.6) +
+  # scale_y_reverse() +
+  # labs(x='주택가격', fill="만족도1_자신의 건강상태", reverse = FALSE) +
+  # guides(color = guide_colorbar(title = df2$sati1_health_change, reverse = TRUE),
+  # size = guide_legend(title = df2$sati1_health_change)) +
+  scale_x_discrete(limits=c("하락", "유지","상승")) +
+  # scale_fill_manual(values = c("#9ecae1", "#4292c6", "#08519c")) +
+  # geom_text(aes(y=sati1_health_change, label=resi_change), vjust=1.5, colour=”white”)) +
+  theme(text=element_text(size=16,  family="Comic Sans MS")) +
+  scale_fill_brewer(palette = "Oranges")
+ggplotly(res2)
 
-satigood <- ddply(satigood, "age_range", transform, percent_n = n/sum(n)*100)
+res3 <- ggplot(df2, aes(x=resi_change, fill=sati3_relationw_change)) +
+  geom_bar(position=position_fill(reverse = TRUE), width = 0.6) +
+  # scale_y_reverse() +
+  # labs(x='주택가격', fill="만족도1_자신의 건강상태", reverse = FALSE) +
+  # guides(color = guide_colorbar(title = df2$sati1_health_change, reverse = TRUE),
+  # size = guide_legend(title = df2$sati1_health_change)) +
+  scale_x_discrete(limits=c("하락", "유지","상승")) +
+  # scale_fill_manual(values = c("#9ecae1", "#4292c6", "#08519c")) +
+  # geom_text(aes(y=sati1_health_change, label=resi_change), vjust=1.5, colour=”white”)) +
+  theme(text=element_text(size=16,  family="Comic Sans MS")) +
+  scale_fill_brewer(palette = "Oranges")
+ggplotly(res3)
 
-### 주택가격이 변한 집단/만족도 변화
-resiup <- subset(df, resi_change == "상승")
-resisame <- subset(df, resi_change == "유지")
-residown <- subset(df, resi_change == "하락")
+res4 <- ggplot(df2, aes(x=resi_change, fill=sati4_relationc_change)) +
+  geom_bar(position=position_fill(reverse = TRUE), width = 0.6) +
+  # scale_y_reverse() +
+  # labs(x='주택가격', fill="만족도1_자신의 건강상태", reverse = FALSE) +
+  # guides(color = guide_colorbar(title = df2$sati1_health_change, reverse = TRUE),
+  # size = guide_legend(title = df2$sati1_health_change)) +
+  scale_x_discrete(limits=c("하락", "유지","상승")) +
+  # scale_fill_manual(values = c("#9ecae1", "#4292c6", "#08519c")) +
+  # geom_text(aes(y=sati1_health_change, label=resi_change), vjust=1.5, colour=”white”)) +
+  theme(text=element_text(size=16,  family="Comic Sans MS")) +
+  scale_fill_brewer(palette = "Oranges")
+ggplotly(res4)
+
+res5 <- ggplot(df2, aes(x=resi_change, fill=sati5_life_change)) +
+  geom_bar(position=position_fill(reverse = TRUE), width = 0.6) +
+  # scale_y_reverse() +
+  # labs(x='주택가격', fill="만족도1_자신의 건강상태", reverse = FALSE) +
+  # guides(color = guide_colorbar(title = df2$sati1_health_change, reverse = TRUE),
+  # size = guide_legend(title = df2$sati1_health_change)) +
+  scale_x_discrete(limits=c("하락", "유지","상승")) +
+  # scale_fill_manual(values = c("#9ecae1", "#4292c6", "#08519c")) +
+  # geom_text(aes(y=sati1_health_change, label=resi_change), vjust=1.5, colour=”white”)) +
+  theme(text=element_text(size=16,  family="Comic Sans MS")) +
+  scale_fill_brewer(palette = "Oranges")
+ggplotly(res5)
+
+
+#########################################################
 
 
 
 
 
-# satigood <- satigood |>
-#   group_by(var_resi, sati_change_mean) |> 
-#   summarise(n = n()) |> 
-#   mutate(pct = n/sum(n),
-#          lbl = scales::percent(pct))
-
-
-ggplot(satigood, aes(x=resi_change, y = percent_n, fill=sati_change)) +
-  geom_bar(position="fill", width = 0.6) +
-  # stat_count(geom = "text", 
-             # aes(label = stat(count)),
-             # position=position_fill(vjust=0.5), colour="white") +
-  labs(y = "Percent", 
-       fill = "삶의 만족도 변화",
-       x = "주택가격 변화 집단",
-       title = "주택가격변화") +
-  # geom_vline(df2, aes(resi_change), color = "blue", linetype = "dashed") +
-  theme_minimal()
 
 
 
 
-satigood
-BarChart(satigood, c(resi_change, sati_change_mean))
+
+
+##  삶의만족도 평균이 변한 집단
+sati_mean_good <- subset(df2, sati_change_mean == "향상")
+sati_mean_same <- subset(df2, sati_change_mean == "변화없음")
+sati_mean_bad <- subset(df2, sati_change_mean == "감소")
 
 
 
 
-### 주택가격이 변한 집단/만족도 변화
+################################################################
+########(2)주택가격이 변화한 집단 중에서, 경제상태 변화비율#####
+################################################################
+
+### 주택가격이 변한 집단
 resiup <- subset(df2, resi_change == "상승")
 resisame <- subset(df2, resi_change == "유지")
 residown <- subset(df2, resi_change == "하락")
 
+df2$sati2_eco = ifelse(df2$sati2_eco >= 1, "향상",
+                       ifelse(df2$sati2_eco == 0, "변화없음",
+                              ifelse(df2$sati2_eco <= -1, "감소", "NA")))
+
+ggplot(df2, aes(x=resi_change, fill=sati2_eco)) +
+  geom_bar(position="fill", width = 0.6) +
+  labs(x='주택가격', fill="만족도2_자신의 경제상태", reverse = TRUE) +
+  # scale_fill_manual(values = c("#9ecae1", "#4292c6", "#08519c")) +
+  theme(text=element_text(size=16,  family="Comic Sans MS")) +
+  scale_x_discrete(limits=c("하락", "유지","상승")) +
+  scale_fill_brewer(palette = "Oranges")
 
 
-## x = 주택가격, y = 삶의 만족도
-ggplot(df2, aes(x=factor(resi_change), fill=sati_change)) +
+
+
+
+sati1_health_change_good <- subset(df2, sati1_health_change == "향상")
+sati1_health_change_same <- subset(df2, sati1_health_change == "변화없음")
+sati1_health_change_bad <- subset(df2, sati1_health_change == "감소")
+
+some(sati_mean_good, 5)
+some(sati1_health_change_good, 5)
+
+# 퍼센트로 어떻게 바꿔야 하는지를 잘 모르겠음
+# sati1_health_change_good <- ddply(sati1_health_change_good, "age_range", transform, percent_n = n/sum(n)*100)
+# sati1_health_change_good$percent_n
+
+# df2 |> mutate(df2$resiup, sati_change_mean == "상승")
+
+
+## x = 주택가격, y = 삶의 만족도 평균
+ggplot(df2, aes(x=resi_change, fill=sati_change_mean)) +
+  geom_bar(position="fill", width = 0.6) +
+  labs(x='주택가격', fill="평균 만족도 변화", reverse = TRUE) +
+  # scale_fill_manual(values = c("#9ecae1", "#4292c6", "#08519c")) +
+  theme_minimal(base_family = "AppleSDGothicNeo-ExtraBold", base_size = 13) +
+  scale_x_discrete(limits=c("하락", "유지","상승")) +
+  scale_fill_brewer(palette = "Oranges")
+
+## x = 주택가격, y = 연령
+ggplot(df2, aes(x=resi_change, fill=age_range)) +
+  geom_bar(position="fill", width = 0.6) +
+  labs(x='주택가격', fill="연령", reverse = TRUE) +
+  # scale_fill_manual(values = c("#9ecae1", "#4292c6", "#08519c")) +
+  theme(text=element_text(size=16,  family="Comic Sans MS")) +
+  scale_x_discrete(limits=c("하락", "유지","상승")) +
+  scale_fill_brewer(palette = "Oranges")
+
+
+################################################################
+####(3)주택가격이 변화한 집단 중에서, 아내와의 관계 변화비율####
+################################################################
+
+## data = , x = 주택가격, y = 만족도2_경제상태
+ggplot(df2, aes(x=resi_change, fill=factor(sati3_relationw_change))) + 
+  geom_bar(position="fill", width = 0.6) + 
+  labs(x='주택가격', fill="만족도2_경제상태", reverse = TRUE) +
+  # scale_fill_manual(values = c("#9ecae1", "#4292c6", "#08519c")) +
+  theme(text=element_text(size=16,  family="Comic Sans MS")) +
+  scale_x_discrete(limits=c("하락", "유지","상승")) +
+  scale_fill_brewer(palette = "Oranges")
+
+# 위 그래프에서 뚜렷하게 변화가 보이지 않아서, 집단을 나누어 봄
+
+
+sati2_eco_change_good <- subset(df2, sati2_eco == "향상")
+sati2_eco_change_same <- subset(df2, sati2_eco == "변화없음")
+sati2_eco_change_bad <- subset(df2, sati2_eco == "감소")
+
+
+
+ggplot(df2, aes(x=resi_change, fill=sati2_eco)) +
+  geom_bar(position="fill", width = 0.6) +
+  labs(x='주택가격', fill="만족도3_아내와의 관계", reverse = TRUE) +
+  # scale_fill_manual(values = c("#9ecae1", "#4292c6", "#08519c")) +
+  theme(text=element_text(size=16,  family="Comic Sans MS")) +
+  scale_x_discrete(limits=c("하락", "유지","상승")) +
+  scale_fill_brewer(palette = "Oranges")
+
+################################################################
+########(4)주택가격이 변화한 집단 중에서, 자녀와의 관계 변화비율#####
+################################################################
+
+df2$sati4_relation_wife = ifelse(df2$sati3_relation_wife >= 1, "향상",
+                                 ifelse(df2$sati3_relation_wife == 0, "변화없음",
+                                        ifelse(df2$sati3_relation_wife <= -1, "감소", "NA")))
+
+
+
+ggplot(df2, aes(x=resi_change, fill=sati4_relationw_change)) +
+  geom_bar(position="fill", width = 0.6) +
+  labs(x='주택가격', fill="만족도4_자녀와의 관계", reverse = TRUE) +
+  # scale_fill_manual(values = c("#9ecae1", "#4292c6", "#08519c")) +
+  theme(text=element_text(size=16,  family="Comic Sans MS")) +
+  scale_x_discrete(limits=c("하락", "유지","상승")) +
+  scale_fill_brewer(palette = "Oranges")
+
+
+################################################################
+########(4)주택가격이 변화한 집단 중에서, 자녀관계 변화비율#####
+################################################################
+
+df2$sati4_relation_child = ifelse(df2$sati4_relation_child >= 1, "향상",
+                                  ifelse(df2$sati4_relation_child == 0, "변화없음",
+                                         ifelse(df2$sati4_relation_child <= -1, "감소", "NA")))
+
+
+
+ggplot(df2, aes(x=resi_change, fill=factor(sati5_life_change))) +
+  geom_bar(position="fill", width = 0.6) +
+  labs(x='주택가격', fill="만족도5_전반적인 삶의 만족도", reverse = TRUE) +
+  # scale_fill_manual(values = c("#9ecae1", "#4292c6", "#08519c")) +
+  theme(text=element_text(size=16,  family="Comic Sans MS")) +
+  scale_x_discrete(limits=c("하락", "유지","상승")) +
+  scale_fill_brewer(palette = "Oranges")
+
+
+
+################################################################
+########(5)주택가격이 변화한 집단 중에서, 전반적인 살ㅇ믜 만족도 변화비율#####
+################################################################
+
+df2$sati5_life = ifelse(df2$sati5_life >= 1, "향상",
+                        ifelse(df2$sati5_life == 0, "변화없음",
+                               ifelse(df2$sati5_life <= -1, "감소", "NA")))
+
+
+
+## data = , x = 주택가격, y = 만족도2_경제상태
+ggplot(df2, aes(x=resi_change, fill=factor(sati5_life))) +
+  geom_bar(position="fill", width = 0.6) +
+  labs(x='주택가격', fill="만족도5_전반적인 삶의 만족도", reverse = TRUE) +
+  # scale_fill_manual(values = c("#9ecae1", "#4292c6", "#08519c")) +
+  theme(text=element_text(size=16,  family="Comic Sans MS")) +
+  scale_x_discrete(limits=c("하락", "유지","상승")) +
+  scale_fill_brewer(palette = "Oranges")
+
+
+
+
+################################################################
+########(6)주택가격이 변화한 집단 중에서, 전반적인 평균 삶의 만족도 변화비율#####
+################################################################
+
+
+ggplot(df2, aes(x=resi_change, fill=sati_change_mean)) + geom_bar()
+
+
+
+
+
+
+
+
+
+##########################################################
+ggplot(df2, aes(x=factor(resi_change), fill=sati_change_mean)) +
   geom_bar(position="fill", width = 0.6) +
   labs(fill="평균 만족도 변화")
 
-ggplot(df2, aes(x = factor(resi_change), y = var_relation, fill = sati_change)) +
+
+ggplot(df2, aes(x = factor(resi_change), y = age_range, fill = sati1_health_change)) +
   geom_col(position = "fill", width = 0.6)
 
 #####
@@ -334,12 +537,12 @@ ggplot(df2, aes(x = resi_change)) +
 
 
 # 분포도 히스토그램
-ggplot(satibad, aes(x=resi_change, y=n, fill = age_range)) + 
+ggplot(satigood, aes(x=resi_change, y=n, fill = age_range)) + 
   geom_col(show.legend = F) + scale_fill_brewer(palette = "Oranges") + 
   labs(x= "만족도변화", y=NULL, fill="주택가격변화") + theme_minimal() 
 
 # age_range
- <- ddply(satigood, "age_range", transform, percent_n = n/sum(n)*100)
+<- ddply(satigood, "age_range", transform, percent_n = n/sum(n)*100)
 
 ggplot(df2, aes(x=var_resi, y=sati_change, fill = n)) + geom_col(position = "dodge")+
   scale_fill_brewer(palette = "Oranges") + labs(x= "주택가격변화", y=NULL, fill="만족도 변화") +
